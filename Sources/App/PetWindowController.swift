@@ -20,14 +20,14 @@ final class PetWindowController {
         window.isOpaque = false
         window.backgroundColor = .clear
         window.hasShadow = false
-        window.level = .floating
+        window.level = .normal
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
         window.isMovableByWindowBackground = true
         window.contentView = NSHostingView(rootView: rootView)
     }
 
     func show() {
-        window.orderFrontRegardless()
+        window.orderFront(nil)
     }
 
     private static func defaultFrame(size: NSSize) -> NSRect {
@@ -40,4 +40,3 @@ final class PetWindowController {
         )
     }
 }
-

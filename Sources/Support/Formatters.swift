@@ -9,5 +9,10 @@ enum Formatters {
 
         return "\(value)"
     }
-}
 
+    static func relative(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+}

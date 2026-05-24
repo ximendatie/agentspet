@@ -91,7 +91,8 @@ struct ClaudeLocalProvider: AgentTaskProvider {
             model: model ?? "unknown",
             tokenUsage: totalTokens,
             status: status,
-            updatedAt: updatedAt
+            updatedAt: updatedAt,
+            openURL: url
         )
     }
 

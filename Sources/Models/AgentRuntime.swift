@@ -1,0 +1,44 @@
+import Foundation
+
+enum AgentRuntimeKind: String, Sendable {
+    case desktopApp
+    case terminal
+
+    var title: String {
+        switch self {
+        case .desktopApp: "桌面端"
+        case .terminal: "终端"
+        }
+    }
+}
+
+struct AgentRuntime: Identifiable, Equatable, Sendable {
+    let id: String
+    var name: String
+    var provider: String
+    var kind: AgentRuntimeKind
+    var summary: String
+    var processCount: Int
+    var updatedAt: Date
+    var bundleIdentifier: String?
+
+    init(
+        id: String,
+        name: String,
+        provider: String,
+        kind: AgentRuntimeKind,
+        summary: String,
+        processCount: Int = 1,
+        updatedAt: Date = Date(),
+        bundleIdentifier: String? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.provider = provider
+        self.kind = kind
+        self.summary = summary
+        self.processCount = processCount
+        self.updatedAt = updatedAt
+        self.bundleIdentifier = bundleIdentifier
+    }
+}

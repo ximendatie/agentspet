@@ -57,7 +57,8 @@ struct CodexLocalProvider: AgentTaskProvider {
                 model: metadata.model ?? "unknown",
                 tokenUsage: metadata.totalTokens,
                 status: completed ? status(for: updatedAt, completed: true) : .running,
-                updatedAt: updatedAt
+                updatedAt: updatedAt,
+                openURL: fileURL
             )
         }
     }

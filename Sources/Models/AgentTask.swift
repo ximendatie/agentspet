@@ -11,7 +11,7 @@ enum AgentTaskStatus: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .running: "进行中"
         case .completed: "已完成"
-        case .history: "历史任务"
+        case .history: "已归档"
         }
     }
 }
@@ -25,6 +25,7 @@ struct AgentTask: Identifiable, Equatable, Sendable {
     var tokenUsage: Int
     var status: AgentTaskStatus
     var updatedAt: Date
+    var openURL: URL?
 
     init(
         id: String = UUID().uuidString,
@@ -34,7 +35,8 @@ struct AgentTask: Identifiable, Equatable, Sendable {
         model: String,
         tokenUsage: Int,
         status: AgentTaskStatus,
-        updatedAt: Date = Date()
+        updatedAt: Date = Date(),
+        openURL: URL? = nil
     ) {
         self.id = id
         self.title = title
@@ -44,5 +46,6 @@ struct AgentTask: Identifiable, Equatable, Sendable {
         self.tokenUsage = tokenUsage
         self.status = status
         self.updatedAt = updatedAt
+        self.openURL = openURL
     }
 }

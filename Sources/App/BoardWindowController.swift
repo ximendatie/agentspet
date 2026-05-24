@@ -3,13 +3,14 @@ import SwiftUI
 
 @MainActor
 final class BoardWindowController: NSObject, NSWindowDelegate {
-    private let window: NSPanel
+    private let window: AgentBoardPanel
+    private var isShowing = false
 
     init(taskStore: AgentTaskStore) {
         let rootView = BoardView(taskStore: taskStore)
         let frame = Self.defaultFrame()
 
-        window = NSPanel(
+        window = AgentBoardPanel(
             contentRect: frame,
             styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
             backing: .buffered,
@@ -17,7 +18,9 @@ final class BoardWindowController: NSObject, NSWindowDelegate {
         )
         window.title = "Agent Board"
         window.minSize = NSSize(width: 760, height: 420)
-        window.level = .floating
+        window.level = .normal
+        window.hidesOnDeactivate = false
+        window.isFloatingPanel = false
         window.isReleasedWhenClosed = false
         window.titlebarAppearsTransparent = true
         window.toolbarStyle = .unifiedCompact
@@ -29,16 +32,33 @@ final class BoardWindowController: NSObject, NSWindowDelegate {
     }
 
     func toggle() {
-        if window.isVisible {
+        if window.isVisible || isShowing {
+            isShowing = false
             window.orderOut(nil)
         } else {
+            isShowing = true
             show()
         }
     }
 
     private func show() {
-        NSApp.activate(ignoringOtherApps: true)
-        window.makeKeyAndOrderFront(nil)
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.isShowing else {
+                return
+            }
+
+            NSApp.activate(ignoringOtherApps: true)
+            self.window.centerIfNeeded()
+            self.window.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    func windowDidBecomeKey(_ notification: Notification) {
+        isShowing = window.isVisible
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        isShowing = false
     }
 
     private static func defaultFrame() -> NSRect {
@@ -53,3 +73,34 @@ final class BoardWindowController: NSObject, NSWindowDelegate {
     }
 }
 
+private final class AgentBoardPanel: NSPanel {
+    private var hasSetInitialPosition = false
+
+    override var canBecomeKey: Bool {
+        true
+    }
+
+    override var canBecomeMain: Bool {
+        true
+    }
+
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if modifierFlags == .command,
+           event.charactersIgnoringModifiers?.lowercased() == "w" {
+            close()
+            return true
+        }
+
+        return super.performKeyEquivalent(with: event)
+    }
+
+    func centerIfNeeded() {
+        guard !hasSetInitialPosition else {
+            return
+        }
+
+        center()
+        hasSetInitialPosition = true
+    }
+}
