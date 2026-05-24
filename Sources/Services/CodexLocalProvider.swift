@@ -1,0 +1,200 @@
+import Foundation
+
+struct CodexLocalProvider: AgentTaskProvider {
+    let providerName = "Codex"
+
+    private let codexDirectory: URL
+
+    init(homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser) {
+        codexDirectory = homeDirectory.appendingPathComponent(".codex", isDirectory: true)
+    }
+
+    func fetchTasks() async -> [AgentTask] {
+        await Task.detached(priority: .utility) {
+            readTasks()
+        }.value
+    }
+
+    private func readTasks() -> [AgentTask] {
+        let indexURL = codexDirectory.appendingPathComponent("session_index.jsonl")
+        let sessionsDirectory = codexDirectory.appendingPathComponent("sessions", isDirectory: true)
+        let indexEntries = readSessionIndex(from: indexURL)
+        guard !indexEntries.isEmpty else {
+            return []
+        }
+
+        let sessionFiles = findJSONLFiles(in: sessionsDirectory)
+        let fileBySessionID = Dictionary(uniqueKeysWithValues: sessionFiles.compactMap { url -> (String, URL)? in
+            guard let id = extractCodexSessionID(from: url.lastPathComponent) else {
+                return nil
+            }
+            return (id, url)
+        })
+
+        return indexEntries.compactMap { entry in
+            guard let fileURL = fileBySessionID[entry.id] else {
+                return AgentTask(
+                    id: "codex:\(entry.id)",
+                    title: entry.threadName,
+                    summary: "Codex 会话已记录，未找到本地事件流",
+                    agent: "Codex",
+                    model: "unknown",
+                    tokenUsage: 0,
+                    status: status(for: entry.updatedAt, completed: true),
+                    updatedAt: entry.updatedAt
+                )
+            }
+
+            let metadata = readCodexSessionMetadata(from: fileURL)
+            let updatedAt = metadata.lastTimestamp ?? entry.updatedAt
+            let completed = metadata.lastTaskEvent != "task_started"
+
+            return AgentTask(
+                id: "codex:\(entry.id)",
+                title: entry.threadName,
+                summary: codexSummary(statusEvent: metadata.lastTaskEvent, cwd: metadata.cwd),
+                agent: "Codex",
+                model: metadata.model ?? "unknown",
+                tokenUsage: metadata.totalTokens,
+                status: completed ? status(for: updatedAt, completed: true) : .running,
+                updatedAt: updatedAt
+            )
+        }
+    }
+
+    private func readSessionIndex(from url: URL) -> [CodexIndexEntry] {
+        guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+            return []
+        }
+
+        return content
+            .split(separator: "\n")
+            .compactMap { line -> CodexIndexEntry? in
+                guard
+                    let data = String(line).data(using: .utf8),
+                    let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                    let id = object["id"] as? String
+                else {
+                    return nil
+                }
+
+                let threadName = object["thread_name"] as? String ?? "Codex 会话 \(id.prefix(8))"
+                let updatedAt = parseDate(object["updated_at"] as? String) ?? Date.distantPast
+                return CodexIndexEntry(id: id, threadName: threadName, updatedAt: updatedAt)
+            }
+    }
+
+    private func readCodexSessionMetadata(from url: URL) -> CodexSessionMetadata {
+        guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+            return CodexSessionMetadata()
+        }
+
+        var metadata = CodexSessionMetadata()
+
+        for line in content.split(separator: "\n") {
+            guard
+                let data = String(line).data(using: .utf8),
+                let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            else {
+                continue
+            }
+
+            if let timestamp = parseDate(object["timestamp"] as? String) {
+                metadata.lastTimestamp = max(metadata.lastTimestamp ?? timestamp, timestamp)
+            }
+
+            guard let payload = object["payload"] as? [String: Any] else {
+                continue
+            }
+
+            if let cwd = payload["cwd"] as? String {
+                metadata.cwd = cwd
+            }
+
+            if let model = payload["model"] as? String {
+                metadata.model = model
+            } else if
+                let collaborationMode = payload["collaboration_mode"] as? [String: Any],
+                let settings = collaborationMode["settings"] as? [String: Any],
+                let model = settings["model"] as? String {
+                metadata.model = model
+            }
+
+            if object["type"] as? String == "event_msg",
+               let eventType = payload["type"] as? String,
+               eventType == "task_started" || eventType == "task_complete" {
+                metadata.lastTaskEvent = eventType
+            }
+
+            if
+                let info = payload["info"] as? [String: Any],
+                let usage = info["total_token_usage"] as? [String: Any],
+                let tokens = usage["total_tokens"] as? Int {
+                metadata.totalTokens = max(metadata.totalTokens, tokens)
+            } else if
+                let usage = payload["total_token_usage"] as? [String: Any],
+                let tokens = usage["total_tokens"] as? Int {
+                metadata.totalTokens = max(metadata.totalTokens, tokens)
+            }
+        }
+
+        return metadata
+    }
+
+    private func findJSONLFiles(in directory: URL) -> [URL] {
+        guard let enumerator = FileManager.default.enumerator(
+            at: directory,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return []
+        }
+
+        return enumerator.compactMap { item -> URL? in
+            guard let url = item as? URL, url.pathExtension == "jsonl" else {
+                return nil
+            }
+            return url
+        }
+    }
+
+    private func extractCodexSessionID(from fileName: String) -> String? {
+        let trimmed = fileName.replacingOccurrences(of: ".jsonl", with: "")
+        return trimmed.split(separator: "-").suffix(5).joined(separator: "-").nilIfEmpty
+    }
+
+    private func codexSummary(statusEvent: String?, cwd: String?) -> String {
+        let location = cwd.flatMap { URL(fileURLWithPath: $0).lastPathComponent.nilIfEmpty }
+
+        switch statusEvent {
+        case "task_started":
+            return location.map { "正在处理本地任务：\($0)" } ?? "正在处理本地 Codex 任务"
+        case "task_complete":
+            return location.map { "最近完成于：\($0)" } ?? "最近完成一个 Codex 任务"
+        default:
+            return location.map { "最近活动目录：\($0)" } ?? "Codex 本机会话"
+        }
+    }
+
+    private func status(for updatedAt: Date, completed: Bool) -> AgentTaskStatus {
+        guard completed else {
+            return .running
+        }
+
+        return Date().timeIntervalSince(updatedAt) < 24 * 60 * 60 ? .completed : .history
+    }
+}
+
+private struct CodexIndexEntry {
+    let id: String
+    let threadName: String
+    let updatedAt: Date
+}
+
+private struct CodexSessionMetadata {
+    var lastTimestamp: Date?
+    var lastTaskEvent: String?
+    var model: String?
+    var cwd: String?
+    var totalTokens = 0
+}
