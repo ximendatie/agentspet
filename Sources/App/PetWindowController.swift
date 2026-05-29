@@ -6,7 +6,7 @@ final class PetWindowController {
     private let window: NSWindow
 
     init(taskStore: AgentTaskStore, onToggleBoard: @escaping () -> Void) {
-        let size = NSSize(width: 118, height: 118)
+        let size = NSSize(width: 89, height: 89)
         let frame = Self.defaultFrame(size: size)
         let rootView = PetView(taskStore: taskStore, onToggleBoard: onToggleBoard)
 
@@ -20,14 +20,14 @@ final class PetWindowController {
         window.isOpaque = false
         window.backgroundColor = .clear
         window.hasShadow = false
-        window.level = .normal
-        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
+        window.level = .floating
+        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
         window.isMovableByWindowBackground = true
         window.contentView = NSHostingView(rootView: rootView)
     }
 
     func show() {
-        window.orderFront(nil)
+        window.orderFrontRegardless()
     }
 
     private static func defaultFrame(size: NSSize) -> NSRect {

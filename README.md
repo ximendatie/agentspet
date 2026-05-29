@@ -31,6 +31,10 @@ AgentsPet uses read-only local observation by default:
 - Codex Desktop / Codex local sessions: reads `~/.codex/session_index.jsonl`
   and `~/.codex/sessions/**/*.jsonl`.
 - Claude local sessions: reads `~/.claude/projects/**/*.jsonl`.
+- Claude Desktop local sessions: reads metadata from
+  `~/Library/Application Support/Claude-3p/local-agent-mode-sessions/**/local_*.json`
+  and `~/Library/Application Support/Claude-3p/claude-code-sessions/**/local_*.json`,
+  then correlates active sessions with local Claude Desktop `--resume` processes.
 - Terminal agents: reads local process metadata from `ps` and records each
   matching process as its own task.
 - OpenClaw: detects OpenClaw Desktop and OpenClaw gateway/CLI process presence

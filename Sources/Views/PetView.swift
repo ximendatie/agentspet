@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct PetView: View {
@@ -13,7 +14,7 @@ struct PetView: View {
             Color.clear
 
             VStack(spacing: 0) {
-                petBody
+                activePetIcon
                     .scaleEffect(idleScale)
                     .rotationEffect(.degrees(taskStore.isWorking ? (workingPhase ? 4 : -4) : 0))
                     .offset(y: jump ? -18 : 0)
@@ -34,6 +35,20 @@ struct PetView: View {
         }
         .onChange(of: taskStore.completionPulseID) { _, _ in
             triggerJump()
+        }
+    }
+
+    @ViewBuilder
+    private var activePetIcon: some View {
+        if let image = MahjongTileImages.image(for: taskStore.runningCount) {
+            Image(nsImage: image)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 69, height: 69)
+                .shadow(color: .black.opacity(0.18), radius: 9, y: 5)
+                .accessibilityLabel(Text(MahjongTileImages.accessibilityLabel(for: taskStore.runningCount)))
+        } else {
+            petBody
         }
     }
 
@@ -113,6 +128,37 @@ struct PetView: View {
     }
 }
 
+private enum MahjongTileImages {
+    static func image(for runningCount: Int) -> NSImage? {
+        let resourceName = resourceName(for: runningCount)
+        guard let url = Bundle.main.url(
+            forResource: resourceName,
+            withExtension: "png",
+            subdirectory: "MahjongTiles"
+        ) else {
+            return nil
+        }
+
+        return NSImage(contentsOf: url)
+    }
+
+    static func accessibilityLabel(for runningCount: Int) -> String {
+        guard runningCount > 0 else {
+            return "白板"
+        }
+
+        return "\(min(runningCount, 9))筒"
+    }
+
+    private static func resourceName(for runningCount: Int) -> String {
+        guard runningCount > 0 else {
+            return "white"
+        }
+
+        return "dot-\(min(runningCount, 9))"
+    }
+}
+
 private struct CodexMark: View {
     let isWorking: Bool
 
@@ -160,4 +206,3 @@ private struct Hexagon: Shape {
         return path
     }
 }
-

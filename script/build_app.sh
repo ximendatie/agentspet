@@ -31,6 +31,10 @@ if [[ -f "$ICON_SOURCE" ]] && command -v magick >/dev/null 2>&1; then
   cp "$ICON_FILE" "$RESOURCES_DIR/AgentsPet.icns"
 fi
 
+if [[ -d "$PWD/Resources/MahjongTiles" ]]; then
+  cp -R "$PWD/Resources/MahjongTiles" "$RESOURCES_DIR/MahjongTiles"
+fi
+
 cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
