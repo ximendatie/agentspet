@@ -46,6 +46,13 @@ struct BoardView: View {
 
             if selectedTab == .sessions {
                 Button {
+                    taskStore.markCompletedTasksRead()
+                } label: {
+                    Label("全部已读", systemImage: "checkmark.circle")
+                }
+                .disabled(!taskStore.hasUnreadCompletedTasks)
+
+                Button {
                     taskStore.completeTask(id: selectedTaskID)
                 } label: {
                     Label("完成", systemImage: "checkmark")

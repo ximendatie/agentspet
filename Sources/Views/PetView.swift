@@ -40,16 +40,28 @@ struct PetView: View {
 
     @ViewBuilder
     private var activePetIcon: some View {
-        if let image = MahjongTileImages.image(for: taskStore.runningCount) {
+        if let image = MahjongTileImages.image(for: tileState) {
             Image(nsImage: image)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 69, height: 69)
                 .shadow(color: .black.opacity(0.18), radius: 9, y: 5)
-                .accessibilityLabel(Text(MahjongTileImages.accessibilityLabel(for: taskStore.runningCount)))
+                .accessibilityLabel(Text(MahjongTileImages.accessibilityLabel(for: tileState)))
         } else {
             petBody
         }
+    }
+
+    private var tileState: MahjongTileState {
+        if taskStore.runningCount > 0 {
+            return .running(taskStore.runningCount)
+        }
+
+        if taskStore.hasUnreadCompletedTasks {
+            return .red
+        }
+
+        return .white
     }
 
     private var petBody: some View {
@@ -128,9 +140,15 @@ struct PetView: View {
     }
 }
 
+private enum MahjongTileState {
+    case running(Int)
+    case red
+    case white
+}
+
 private enum MahjongTileImages {
-    static func image(for runningCount: Int) -> NSImage? {
-        let resourceName = resourceName(for: runningCount)
+    static func image(for state: MahjongTileState) -> NSImage? {
+        let resourceName = resourceName(for: state)
         guard let url = Bundle.main.url(
             forResource: resourceName,
             withExtension: "png",
@@ -142,20 +160,26 @@ private enum MahjongTileImages {
         return NSImage(contentsOf: url)
     }
 
-    static func accessibilityLabel(for runningCount: Int) -> String {
-        guard runningCount > 0 else {
+    static func accessibilityLabel(for state: MahjongTileState) -> String {
+        switch state {
+        case .running(let runningCount):
+            return "\(min(runningCount, 9))筒"
+        case .red:
+            return "红中"
+        case .white:
             return "白板"
         }
-
-        return "\(min(runningCount, 9))筒"
     }
 
-    private static func resourceName(for runningCount: Int) -> String {
-        guard runningCount > 0 else {
+    private static func resourceName(for state: MahjongTileState) -> String {
+        switch state {
+        case .running(let runningCount):
+            return "dot-\(min(runningCount, 9))"
+        case .red:
+            return "red"
+        case .white:
             return "white"
         }
-
-        return "dot-\(min(runningCount, 9))"
     }
 }
 

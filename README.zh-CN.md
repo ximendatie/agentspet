@@ -1,5 +1,9 @@
 # mahjong
 
+![mahjong 可视化展示](docs/assets/showcase.png)
+
+[打开可视化展示页](docs/showcase.html)
+
 mahjong 是一个轻量级 macOS 桌面伴侣，用来在本机观察 AI Agent 的工作状态，包括桌面应用和终端会话。
 
 它采用本地优先、默认只读的设计：应用帮助你了解各个 Agent 正在做什么，但不会上传数据、修改 provider 配置，也不会控制其他应用。
@@ -74,6 +78,7 @@ mahjong 默认只做只读的本地观察：
 
 ## 文档
 
+- [视觉展示页](docs/showcase.html)
 - [隐私和安全说明](docs/privacy.md)
 - [架构概览](docs/architecture.md)
 - [路线图](docs/roadmap.md)

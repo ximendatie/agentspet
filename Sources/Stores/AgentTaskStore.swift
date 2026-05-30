@@ -10,12 +10,14 @@ final class AgentTaskStore: ObservableObject {
     @Published private(set) var diagnostics: [ProviderDiagnostic]
     @Published private(set) var isPrivacyModeEnabled: Bool
     @Published private(set) var isMenuBarEnabled: Bool
+    @Published private(set) var unreadCompletedCount: Int
 
     private static let futureTasksStorageKey = "local.mahjong.futureTasks"
     private static let legacyFutureTasksStorageKey = "local.agentspet.futureTasks"
     private static let providerSettingsStorageKey = "local.mahjong.providerSettings"
     private static let privacyModeStorageKey = "local.mahjong.privacyMode"
     private static let menuBarModeStorageKey = "local.mahjong.menuBarMode"
+    private static let readCompletedTaskIDsStorageKey = "local.mahjong.readCompletedTaskIDs"
 
     private let descriptors: [AgentProviderDescriptor]
     private let providers: [AgentTaskProvider]
@@ -25,6 +27,8 @@ final class AgentTaskStore: ObservableObject {
     private var localUpdatedAtOverrides: [String: Date] = [:]
     private var refreshTask: Task<Void, Never>?
     private var knownCompletedTaskIDs: Set<String> = []
+    private var readCompletedTaskIDs: Set<String>
+    private var hasInitializedCompletedReadState: Bool
 
     init(
         descriptors: [AgentProviderDescriptor]? = nil,
@@ -52,6 +56,10 @@ final class AgentTaskStore: ObservableObject {
         diagnostics = initialDiagnostics(for: loadedProviderSettings, descriptors: self.descriptors)
         isPrivacyModeEnabled = UserDefaults.standard.bool(forKey: Self.privacyModeStorageKey)
         isMenuBarEnabled = UserDefaults.standard.object(forKey: Self.menuBarModeStorageKey) as? Bool ?? true
+        let loadedReadCompletedTaskIDs = Self.loadReadCompletedTaskIDs()
+        readCompletedTaskIDs = loadedReadCompletedTaskIDs ?? []
+        hasInitializedCompletedReadState = loadedReadCompletedTaskIDs != nil
+        unreadCompletedCount = 0
         knownCompletedTaskIDs = Set(tasks.filter { $0.status == .completed }.map(\.id))
     }
 
@@ -65,6 +73,10 @@ final class AgentTaskStore: ObservableObject {
 
     var isWorking: Bool {
         runningCount > 0
+    }
+
+    var hasUnreadCompletedTasks: Bool {
+        unreadCompletedCount > 0
     }
 
     var runningAgentCount: Int {
@@ -157,7 +169,18 @@ final class AgentTaskStore: ObservableObject {
         localUpdatedAtOverrides[id] = Date()
 
         publishMergedTasks()
-        completionPulseID = UUID()
+    }
+
+    func markCompletedTasksRead() {
+        let completedTaskIDs = Set(tasks.filter { $0.status == .completed }.map(\.id))
+        guard !completedTaskIDs.isEmpty else {
+            unreadCompletedCount = 0
+            return
+        }
+
+        readCompletedTaskIDs.formUnion(completedTaskIDs)
+        persistReadCompletedTaskIDs()
+        unreadCompletedCount = 0
     }
 
     func archiveTask(id: String?) {
@@ -317,12 +340,26 @@ final class AgentTaskStore: ObservableObject {
                     return statusSortIndex(lhs.status) < statusSortIndex(rhs.status)
                 }
                 return lhs.updatedAt > rhs.updatedAt
-            }
+        }
 
         let completedTaskIDs = Set(tasks.filter { $0.status == .completed }.map(\.id))
-        if !completedTaskIDs.subtracting(knownCompletedTaskIDs).isEmpty {
-            completionPulseID = UUID()
+        if !hasInitializedCompletedReadState {
+            readCompletedTaskIDs.formUnion(completedTaskIDs)
+            hasInitializedCompletedReadState = true
+            persistReadCompletedTaskIDs()
+        } else {
+            let newlyCompletedTaskIDs = completedTaskIDs.subtracting(knownCompletedTaskIDs)
+            let unreadNewlyCompletedTaskIDs = newlyCompletedTaskIDs.subtracting(readCompletedTaskIDs)
+            if !unreadNewlyCompletedTaskIDs.isEmpty {
+                readCompletedTaskIDs.subtract(unreadNewlyCompletedTaskIDs)
+                persistReadCompletedTaskIDs()
+                completionPulseID = UUID()
+            }
         }
+
+        readCompletedTaskIDs.formIntersection(completedTaskIDs)
+        persistReadCompletedTaskIDs()
+        unreadCompletedCount = completedTaskIDs.subtracting(readCompletedTaskIDs).count
         knownCompletedTaskIDs = completedTaskIDs
     }
 
@@ -446,6 +483,27 @@ final class AgentTaskStore: ObservableObject {
             UserDefaults.standard.set(data, forKey: Self.futureTasksStorageKey)
         } catch {
             assertionFailure("Failed to persist future plans: \(error)")
+        }
+    }
+
+    private static func loadReadCompletedTaskIDs() -> Set<String>? {
+        guard let data = UserDefaults.standard.data(forKey: readCompletedTaskIDsStorageKey) else {
+            return nil
+        }
+
+        do {
+            return try JSONDecoder().decode(Set<String>.self, from: data)
+        } catch {
+            return []
+        }
+    }
+
+    private func persistReadCompletedTaskIDs() {
+        do {
+            let data = try JSONEncoder().encode(readCompletedTaskIDs)
+            UserDefaults.standard.set(data, forKey: Self.readCompletedTaskIDsStorageKey)
+        } catch {
+            assertionFailure("Failed to persist read completed task IDs: \(error)")
         }
     }
 }

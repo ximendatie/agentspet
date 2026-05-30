@@ -9,6 +9,7 @@ final class AgentTaskStoreTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: "local.mahjong.providerSettings")
         UserDefaults.standard.removeObject(forKey: "local.mahjong.privacyMode")
         UserDefaults.standard.removeObject(forKey: "local.mahjong.menuBarMode")
+        UserDefaults.standard.removeObject(forKey: "local.mahjong.readCompletedTaskIDs")
     }
 
     func testRefreshDeduplicatesTasksAndRuntimes() async throws {
@@ -94,9 +95,72 @@ final class AgentTaskStoreTests: XCTestCase {
         store.completeTask(id: "task")
         XCTAssertEqual(store.task(id: "task")?.status, .completed)
         XCTAssertNotNil(store.completionPulseID)
+        XCTAssertEqual(store.unreadCompletedCount, 1)
 
         store.archiveTask(id: "task")
         XCTAssertEqual(store.task(id: "task")?.status, .history)
+    }
+
+    func testCompletedTasksCanBeMarkedRead() async throws {
+        let store = AgentTaskStore(
+            providers: [
+                MockTaskProvider(tasks: [
+                    AgentTask(
+                        id: "task",
+                        title: "Running task",
+                        summary: "summary",
+                        agent: "Test",
+                        model: "model",
+                        tokenUsage: 0,
+                        status: .running,
+                        updatedAt: Date()
+                    )
+                ])
+            ],
+            runtimeProviders: []
+        )
+
+        store.refreshNow()
+        try await waitUntil { store.task(id: "task") != nil }
+
+        store.completeTask(id: "task")
+        XCTAssertTrue(store.hasUnreadCompletedTasks)
+        XCTAssertEqual(store.unreadCompletedCount, 1)
+
+        store.markCompletedTasksRead()
+        XCTAssertFalse(store.hasUnreadCompletedTasks)
+        XCTAssertEqual(store.unreadCompletedCount, 0)
+    }
+
+    func testCompletedReadStatePersistsAcrossReloads() async throws {
+        let completedTask = AgentTask(
+            id: "task",
+            title: "Completed task",
+            summary: "summary",
+            agent: "Test",
+            model: "model",
+            tokenUsage: 0,
+            status: .completed,
+            updatedAt: Date()
+        )
+        let store = AgentTaskStore(
+            providers: [MockTaskProvider(tasks: [completedTask])],
+            runtimeProviders: []
+        )
+
+        store.refreshNow()
+        try await waitUntil { store.task(id: "task") != nil }
+        XCTAssertFalse(store.hasUnreadCompletedTasks)
+
+        let reloadedStore = AgentTaskStore(
+            providers: [MockTaskProvider(tasks: [completedTask])],
+            runtimeProviders: []
+        )
+
+        reloadedStore.refreshNow()
+        try await waitUntil { reloadedStore.task(id: "task") != nil }
+        XCTAssertFalse(reloadedStore.hasUnreadCompletedTasks)
+        XCTAssertEqual(reloadedStore.unreadCompletedCount, 0)
     }
 
     func testDisabledProviderIsSkippedAndReported() async throws {

@@ -1,0 +1,1032 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mahjong visual showcase</title>
+  <link rel="icon" href="../Resources/MahjongTiles/white.png">
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f7f3ea;
+      --paper-2: #ece6d8;
+      --ink: #151714;
+      --muted: #62685f;
+      --line: rgba(21, 23, 20, 0.14);
+      --tile: #fffdf7;
+      --jade: #0d8f78;
+      --jade-soft: rgba(13, 143, 120, 0.14);
+      --coral: #d84f3f;
+      --gold: #c89428;
+      --indigo: #344e86;
+      --shadow: 0 26px 70px rgba(28, 24, 16, 0.18);
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(21, 23, 20, 0.035) 1px, transparent 1px) 0 0 / 48px 48px,
+        linear-gradient(0deg, rgba(21, 23, 20, 0.035) 1px, transparent 1px) 0 0 / 48px 48px,
+        var(--paper);
+      letter-spacing: 0;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 24px 0 56px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 0 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-weight: 760;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 42px;
+      object-fit: contain;
+      filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.14));
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .nav a {
+      padding: 8px 10px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      text-decoration: none;
+    }
+
+    .nav a:hover {
+      border-color: var(--line);
+      background: rgba(255, 255, 255, 0.42);
+    }
+
+    .hero {
+      min-height: calc(100vh - 128px);
+      display: grid;
+      grid-template-columns: minmax(0, 0.88fr) minmax(420px, 1.12fr);
+      gap: 32px;
+      align-items: center;
+      padding-bottom: 40px;
+    }
+
+    .hero-copy {
+      align-self: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 18px;
+      color: var(--jade);
+      font-size: 13px;
+      font-weight: 760;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 18px;
+      height: 2px;
+      background: var(--jade);
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 10ch;
+      font-size: clamp(54px, 8vw, 112px);
+      line-height: 0.9;
+      letter-spacing: 0;
+    }
+
+    .lede {
+      max-width: 520px;
+      margin: 24px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.75;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 28px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.52);
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 720;
+      text-decoration: none;
+      box-shadow: 0 10px 24px rgba(28, 24, 16, 0.08);
+      cursor: pointer;
+    }
+
+    .button.primary {
+      border-color: rgba(13, 143, 120, 0.35);
+      background: var(--ink);
+      color: #fffdf7;
+    }
+
+    .stage-wrap {
+      position: relative;
+      min-height: 580px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.36)),
+        linear-gradient(180deg, rgba(13, 143, 120, 0.08), rgba(200, 148, 40, 0.07));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .stage-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .window {
+      position: absolute;
+      left: 34px;
+      right: 34px;
+      top: 64px;
+      min-height: 360px;
+      border: 1px solid rgba(21, 23, 20, 0.16);
+      border-radius: 10px;
+      background: rgba(252, 250, 242, 0.88);
+      box-shadow: 0 30px 74px rgba(40, 33, 20, 0.22);
+      backdrop-filter: blur(18px);
+      overflow: hidden;
+    }
+
+    .window-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 58px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .traffic {
+      display: flex;
+      gap: 7px;
+    }
+
+    .traffic span {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #e5604f;
+    }
+
+    .traffic span:nth-child(2) {
+      background: #d5a936;
+    }
+
+    .traffic span:nth-child(3) {
+      background: #4ba987;
+    }
+
+    .board-title {
+      font-weight: 760;
+    }
+
+    .board-metrics {
+      display: flex;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 9px;
+      border: 1px solid rgba(21, 23, 20, 0.1);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.5);
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--jade);
+      box-shadow: 0 0 0 5px rgba(13, 143, 120, 0.12);
+    }
+
+    .board-body {
+      display: grid;
+      grid-template-columns: 112px 1fr;
+      min-height: 302px;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      padding: 16px 10px;
+      background: rgba(248, 244, 234, 0.62);
+    }
+
+    .side-item {
+      margin-bottom: 7px;
+      padding: 9px 10px;
+      border-radius: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 720;
+    }
+
+    .side-item.active {
+      color: var(--ink);
+      background: var(--jade-soft);
+    }
+
+    .columns {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      min-width: 0;
+    }
+
+    .column {
+      padding: 15px;
+      border-right: 1px solid var(--line);
+      min-width: 0;
+    }
+
+    .column:last-child {
+      border-right: 0;
+    }
+
+    .column h2 {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 820;
+    }
+
+    .task-card {
+      min-height: 104px;
+      margin-bottom: 10px;
+      padding: 13px;
+      border: 1px solid rgba(21, 23, 20, 0.1);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.58);
+      box-shadow: 0 10px 22px rgba(28, 24, 16, 0.06);
+      transform: translateY(0);
+      transition: transform 240ms ease, box-shadow 240ms ease;
+    }
+
+    .task-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 32px rgba(28, 24, 16, 0.11);
+    }
+
+    .task-card strong {
+      display: block;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .task-card p {
+      margin: 8px 0 10px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 10px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .floating-pet {
+      position: absolute;
+      left: 38px;
+      bottom: 36px;
+      width: 112px;
+      height: 136px;
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.34);
+      border: 1px solid rgba(255, 255, 255, 0.56);
+      box-shadow: 0 22px 54px rgba(28, 24, 16, 0.2);
+      backdrop-filter: blur(16px);
+    }
+
+    .tile-stack {
+      position: relative;
+      width: 78px;
+      height: 92px;
+      animation: breathe 3.2s ease-in-out infinite;
+    }
+
+    .tile-stack img {
+      position: absolute;
+      width: 72px;
+      height: 86px;
+      object-fit: contain;
+      filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.18));
+    }
+
+    .tile-stack img:nth-child(1) {
+      transform: rotate(-8deg) translate(-10px, 7px);
+      opacity: 0.42;
+    }
+
+    .tile-stack img:nth-child(2) {
+      transform: rotate(7deg) translate(9px, 3px);
+      opacity: 0.62;
+    }
+
+    .tile-stack img:nth-child(3) {
+      transform: translate(1px, -4px);
+    }
+
+    .runtime-strip {
+      position: absolute;
+      right: 34px;
+      bottom: 34px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(72px, 1fr));
+      gap: 10px;
+      width: min(430px, calc(100% - 190px));
+    }
+
+    .runtime {
+      min-height: 78px;
+      padding: 11px;
+      border: 1px solid rgba(21, 23, 20, 0.1);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.56);
+      backdrop-filter: blur(12px);
+    }
+
+    .runtime b {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .runtime span {
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.4;
+    }
+
+    .status-line {
+      height: 4px;
+      margin-top: 10px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--jade), var(--gold), var(--coral));
+      transform-origin: left;
+      animation: workline 2.7s ease-in-out infinite;
+    }
+
+    .section {
+      padding: 54px 0 0;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .section h2 {
+      margin: 0;
+      font-size: 30px;
+      letter-spacing: 0;
+    }
+
+    .section p {
+      max-width: 650px;
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .flow-item {
+      position: relative;
+      min-height: 170px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.5);
+      overflow: hidden;
+    }
+
+    .flow-item::after {
+      content: "";
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 16px;
+      height: 3px;
+      border-radius: 999px;
+      background: currentColor;
+      opacity: 0.72;
+    }
+
+    .flow-item:nth-child(1) {
+      color: var(--indigo);
+    }
+
+    .flow-item:nth-child(2) {
+      color: var(--jade);
+    }
+
+    .flow-item:nth-child(3) {
+      color: var(--gold);
+    }
+
+    .flow-item:nth-child(4) {
+      color: var(--coral);
+    }
+
+    .flow-kicker {
+      margin-bottom: 34px;
+      color: currentColor;
+      font-size: 12px;
+      font-weight: 820;
+    }
+
+    .flow-item h3 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .flow-item p {
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .provider-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .provider {
+      min-height: 118px;
+      padding: 14px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.48);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .provider b {
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .provider small {
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .privacy-band {
+      display: grid;
+      grid-template-columns: 0.95fr 1.05fr;
+      gap: 18px;
+      align-items: stretch;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.48);
+    }
+
+    .privacy-list {
+      display: grid;
+      gap: 10px;
+      align-content: center;
+    }
+
+    .privacy-list div {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 14px;
+      border: 1px solid rgba(21, 23, 20, 0.1);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.5);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .privacy-list b {
+      color: var(--ink);
+    }
+
+    .terminal {
+      min-height: 250px;
+      padding: 16px;
+      border-radius: var(--radius);
+      background: #151714;
+      color: #efe9dc;
+      font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      overflow: hidden;
+    }
+
+    .terminal .dim {
+      color: #9fa69a;
+    }
+
+    .terminal .ok {
+      color: #78d0b8;
+    }
+
+    .terminal .warn {
+      color: #e5bd5a;
+    }
+
+    @keyframes breathe {
+      0%, 100% {
+        transform: translateY(0) rotate(-1deg);
+      }
+      50% {
+        transform: translateY(-8px) rotate(2deg);
+      }
+    }
+
+    @keyframes workline {
+      0%, 100% {
+        transform: scaleX(0.28);
+      }
+      50% {
+        transform: scaleX(1);
+      }
+    }
+
+    @media (max-width: 980px) {
+      .hero {
+        grid-template-columns: 1fr;
+        min-height: auto;
+      }
+
+      .stage-wrap {
+        min-height: 620px;
+      }
+
+      .flow,
+      .privacy-band {
+        grid-template-columns: 1fr;
+      }
+
+      .provider-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .page {
+        width: min(100% - 22px, 1180px);
+        padding-top: 10px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .nav {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+
+      .hero {
+        gap: 22px;
+      }
+
+      .stage-wrap {
+        min-height: 610px;
+      }
+
+      .window {
+        left: 12px;
+        right: 12px;
+        top: 26px;
+      }
+
+      .window-head {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+      }
+
+      .board-body {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: flex;
+        gap: 8px;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+        overflow-x: auto;
+      }
+
+      .side-item {
+        white-space: nowrap;
+      }
+
+      .columns {
+        grid-template-columns: 1fr;
+      }
+
+      .column {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .floating-pet {
+        left: 12px;
+        bottom: 18px;
+        width: 96px;
+        height: 116px;
+      }
+
+      .runtime-strip {
+        right: 12px;
+        bottom: 18px;
+        grid-template-columns: repeat(2, 1fr);
+        width: calc(100% - 126px);
+      }
+
+      .provider-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="brand" href="../README.md" aria-label="mahjong README">
+        <img class="brand-mark" src="../Resources/MahjongTiles/white.png" alt="">
+        <span>mahjong</span>
+      </a>
+      <nav class="nav" aria-label="页面导航">
+        <a href="#flow">观察链路</a>
+        <a href="#providers">Provider</a>
+        <a href="#privacy">安全边界</a>
+        <a href="../README.zh-CN.md">中文 README</a>
+      </nav>
+    </header>
+
+    <section class="hero" aria-labelledby="showcase-title">
+      <div class="hero-copy">
+        <p class="eyebrow">local-first agent companion</p>
+        <h1 id="showcase-title">mahjong visual showcase</h1>
+        <p class="lede">
+          一个用于展示 mahjong 产品气质的视觉页面：悬浮麻将牌、Agent Board、provider 状态和只读观察边界被放在同一个可视化舞台里。
+        </p>
+        <div class="hero-actions">
+          <button class="button primary" type="button" data-mode="working">运行态</button>
+          <button class="button" type="button" data-mode="quiet">静默态</button>
+          <button class="button" type="button" data-mode="privacy">隐私态</button>
+        </div>
+      </div>
+
+      <div class="stage-wrap" id="stage">
+        <canvas class="stage-canvas" id="flowCanvas" aria-hidden="true"></canvas>
+
+        <div class="window" aria-label="mahjong Board 视觉预览">
+          <div class="window-head">
+            <div class="traffic" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="board-title">mahjong Board</div>
+            <div class="board-metrics">
+              <span class="pill"><span class="dot"></span><span id="runningLabel">3 running</span></span>
+              <span class="pill" id="privacyPill">read-only</span>
+            </div>
+          </div>
+
+          <div class="board-body">
+            <aside class="sidebar">
+              <div class="side-item active">会话</div>
+              <div class="side-item">Agents</div>
+              <div class="side-item">未来计划</div>
+              <div class="side-item">设置</div>
+            </aside>
+
+            <div class="columns">
+              <section class="column">
+                <h2>进行中</h2>
+                <article class="task-card live-card">
+                  <strong>重构 provider 状态合并</strong>
+                  <p>Codex 本地会话正在刷新任务索引。</p>
+                  <div class="meta-row"><span>codex</span><span>18.4k tokens</span></div>
+                </article>
+                <article class="task-card live-card">
+                  <strong>整理 Claude Desktop 会话</strong>
+                  <p>进程检测与 resume metadata 正在关联。</p>
+                  <div class="meta-row"><span>claude</span><span>7.1k tokens</span></div>
+                </article>
+              </section>
+
+              <section class="column">
+                <h2>已完成</h2>
+                <article class="task-card">
+                  <strong>补充中文 README</strong>
+                  <p>本地文档入口已同步。</p>
+                  <div class="meta-row"><span>docs</span><span>today</span></div>
+                </article>
+              </section>
+
+              <section class="column">
+                <h2>已中断</h2>
+                <article class="task-card">
+                  <strong>等待授权的桌面任务</strong>
+                  <p>只展示状态，不触发 provider 操作。</p>
+                  <div class="meta-row"><span>desktop</span><span>paused</span></div>
+                </article>
+              </section>
+            </div>
+          </div>
+        </div>
+
+        <div class="floating-pet" aria-label="悬浮麻将牌伴侣">
+          <div class="tile-stack">
+            <img src="../Resources/MahjongTiles/dot-1.png" alt="">
+            <img src="../Resources/MahjongTiles/dot-5.png" alt="">
+            <img id="activeTile" src="../Resources/MahjongTiles/dot-3.png" alt="三筒">
+          </div>
+        </div>
+
+        <div class="runtime-strip" aria-label="运行时状态">
+          <div class="runtime">
+            <b>Codex</b>
+            <span>sessions jsonl</span>
+            <div class="status-line"></div>
+          </div>
+          <div class="runtime">
+            <b>Claude</b>
+            <span>local projects</span>
+            <div class="status-line"></div>
+          </div>
+          <div class="runtime">
+            <b>Hermes</b>
+            <span>state database</span>
+            <div class="status-line"></div>
+          </div>
+          <div class="runtime">
+            <b>ChatGPT</b>
+            <span>desktop presence</span>
+            <div class="status-line"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="flow">
+      <div class="section-head">
+        <div>
+          <h2>观察链路</h2>
+          <p>页面把 mahjong 的核心运行方式拆成四段：本地读取、规范化、合并状态、渲染看板。每一步都保持只读边界。</p>
+        </div>
+      </div>
+      <div class="flow">
+        <article class="flow-item">
+          <div class="flow-kicker">01</div>
+          <h3>Local Sources</h3>
+          <p>读取本机 session、metadata、进程和桌面应用状态。</p>
+        </article>
+        <article class="flow-item">
+          <div class="flow-kicker">02</div>
+          <h3>Providers</h3>
+          <p>每个 provider 防御式解析，缺失或漂移时返回部分信息。</p>
+        </article>
+        <article class="flow-item">
+          <div class="flow-kicker">03</div>
+          <h3>AgentTaskStore</h3>
+          <p>去重、合并本地覆盖状态，并保留未来计划。</p>
+        </article>
+        <article class="flow-item">
+          <div class="flow-kicker">04</div>
+          <h3>Board + Pet</h3>
+          <p>把运行负载映射到任务卡片、badge 和麻将牌图标。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="providers">
+      <div class="section-head">
+        <div>
+          <h2>Provider 地图</h2>
+          <p>当前展示页覆盖项目 README 中列出的 provider，强调“看见状态”而不是“接管执行”。</p>
+        </div>
+      </div>
+      <div class="provider-grid">
+        <article class="provider"><b>Codex</b><small>session_index.jsonl</small></article>
+        <article class="provider"><b>Claude</b><small>projects jsonl</small></article>
+        <article class="provider"><b>Claude Desktop</b><small>resume processes</small></article>
+        <article class="provider"><b>Hermes</b><small>state.db</small></article>
+        <article class="provider"><b>Terminal Agents</b><small>local ps metadata</small></article>
+        <article class="provider"><b>OpenClaw</b><small>presence only</small></article>
+        <article class="provider"><b>ChatGPT Desktop</b><small>presence + activity</small></article>
+      </div>
+    </section>
+
+    <section class="section" id="privacy">
+      <div class="privacy-band">
+        <div>
+          <h2>只读安全边界</h2>
+          <p>这个页面延续应用本身的产品原则：不展示完整对话正文，不写入 provider 配置，不发送消息，不触发远程动作。</p>
+        </div>
+        <div class="privacy-list">
+          <div><b>Conversation body</b><span>默认隐藏</span></div>
+          <div><b>Provider config</b><span>不写入</span></div>
+          <div><b>Remote service</b><span>不上传</span></div>
+          <div><b>Agent control</b><span>不接管</span></div>
+        </div>
+        <pre class="terminal" aria-label="只读观察示例"><span class="dim">$ mahjong observe --local</span>
+<span class="ok">ok</span> codex sessions indexed
+<span class="ok">ok</span> claude metadata summarized
+<span class="warn">read-only</span> provider config untouched
+<span class="warn">read-only</span> message body hidden
+<span class="ok">done</span> board refreshed locally</pre>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const stage = document.getElementById("stage");
+    const canvas = document.getElementById("flowCanvas");
+    const context = canvas.getContext("2d");
+    const buttons = Array.from(document.querySelectorAll("[data-mode]"));
+    const activeTile = document.getElementById("activeTile");
+    const runningLabel = document.getElementById("runningLabel");
+    const privacyPill = document.getElementById("privacyPill");
+    const liveCards = Array.from(document.querySelectorAll(".live-card"));
+    let mode = "working";
+    let particles = [];
+    let tick = 0;
+
+    function resizeCanvas() {
+      const rect = stage.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(rect.width * ratio);
+      canvas.height = Math.floor(rect.height * ratio);
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      seedParticles();
+    }
+
+    function seedParticles() {
+      const rect = stage.getBoundingClientRect();
+      const count = Math.max(18, Math.floor(rect.width / 30));
+      particles = Array.from({ length: count }, (_, index) => ({
+        x: (index / count) * rect.width + Math.random() * 22,
+        y: 34 + Math.random() * (rect.height - 110),
+        speed: 0.45 + Math.random() * 1.15,
+        size: 2 + Math.random() * 3,
+        hue: index % 3
+      }));
+    }
+
+    function draw() {
+      const rect = stage.getBoundingClientRect();
+      context.clearRect(0, 0, rect.width, rect.height);
+      tick += mode === "quiet" ? 0.006 : 0.016;
+
+      const colors = mode === "privacy"
+        ? ["rgba(21,23,20,0.18)", "rgba(98,104,95,0.2)", "rgba(13,143,120,0.18)"]
+        : ["rgba(13,143,120,0.38)", "rgba(200,148,40,0.34)", "rgba(216,79,63,0.28)"];
+
+      particles.forEach((particle, index) => {
+        const wave = Math.sin(tick * 2 + index * 0.7) * 18;
+        particle.x += particle.speed * (mode === "quiet" ? 0.28 : 1);
+        if (particle.x > rect.width + 20) {
+          particle.x = -20;
+          particle.y = 34 + Math.random() * (rect.height - 110);
+        }
+
+        context.beginPath();
+        context.arc(particle.x, particle.y + wave, particle.size, 0, Math.PI * 2);
+        context.fillStyle = colors[particle.hue];
+        context.fill();
+
+        context.beginPath();
+        context.moveTo(Math.max(0, particle.x - 90), particle.y + wave);
+        context.lineTo(particle.x, particle.y + wave);
+        context.strokeStyle = colors[particle.hue];
+        context.lineWidth = 1;
+        context.stroke();
+      });
+
+      requestAnimationFrame(draw);
+    }
+
+    function setMode(nextMode) {
+      mode = nextMode;
+      buttons.forEach((button) => {
+        button.classList.toggle("primary", button.dataset.mode === nextMode);
+      });
+
+      if (nextMode === "working") {
+        activeTile.src = "../Resources/MahjongTiles/dot-3.png";
+        activeTile.alt = "三筒";
+        runningLabel.textContent = "3 running";
+        privacyPill.textContent = "read-only";
+        liveCards.forEach((card) => card.style.opacity = "1");
+      }
+
+      if (nextMode === "quiet") {
+        activeTile.src = "../Resources/MahjongTiles/white.png";
+        activeTile.alt = "白板";
+        runningLabel.textContent = "0 running";
+        privacyPill.textContent = "idle";
+        liveCards.forEach((card) => card.style.opacity = "0.52");
+      }
+
+      if (nextMode === "privacy") {
+        activeTile.src = "../Resources/MahjongTiles/dot-9.png";
+        activeTile.alt = "九筒";
+        runningLabel.textContent = "hidden";
+        privacyPill.textContent = "privacy";
+        liveCards.forEach((card) => card.style.opacity = "0.34");
+      }
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => setMode(button.dataset.mode));
+    });
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+    draw();
+  </script>
+</body>
+</html>

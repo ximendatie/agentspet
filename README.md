@@ -2,6 +2,10 @@
 
 [中文 README](README.zh-CN.md)
 
+![mahjong visual showcase](docs/assets/showcase.png)
+
+[Open the visual showcase](docs/showcase.html)
+
 mahjong is a tiny macOS desktop companion for watching local AI agent work
 across desktop apps and terminal sessions.
 
@@ -89,6 +93,7 @@ mahjong uses read-only local observation by default:
 
 ## Documentation
 
+- [Visual showcase](docs/showcase.html)
 - [Privacy and security notes](docs/privacy.md)
 - [Architecture overview](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
