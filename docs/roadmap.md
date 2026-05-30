@@ -1,10 +1,10 @@
-# AgentsPet 路线图
+# mahjong 路线图
 
-AgentsPet 的长期方向是成为一个本地优先的 AI Agent 工作状态伴侣：安静、可信、可扩展，并且容易参与贡献。
+mahjong 的长期方向是成为一个本地优先的 AI Agent 工作状态伴侣：安静、可信、可扩展，并且容易参与贡献。
 
 ## 产品北极星
 
-> 一个展示 AI Agent 正在做什么的本地桌面伴侣。
+> 一个用麻将牌状态展示 AI Agent 正在做什么的本地桌面伴侣。
 
 核心原则：
 
@@ -44,8 +44,8 @@ flowchart LR
 
 | 模块 | 状态 |
 | --- | --- |
-| macOS 桌宠 | 已完成 |
-| Agent Board | 已完成 |
+| macOS 麻将牌桌宠 | 已完成 |
+| mahjong Board | 已完成 |
 | Codex / Claude / Claude Desktop / Hermes 支持 | 初始支持 |
 | Terminal / Desktop runtime 检测 | 初始支持 |
 | README / LICENSE / CONTRIBUTING / SECURITY | 已完成 |
@@ -64,7 +64,7 @@ flowchart LR
 | 优先级 | 工作项 | 原因 |
 | --- | --- | --- |
 | P0 | Settings 页面 | 用户在信任本地数据访问前，需要能控制它。 |
-| P0 | Provider 启用/禁用开关 | 用户应该能选择 AgentsPet 读取哪些来源。 |
+| P0 | Provider 启用/禁用开关 | 用户应该能选择 mahjong 读取哪些来源。 |
 | P0 | Provider Diagnostics | 读取失败不应该静默消失，需要可见、可解释。 |
 | P0 | 隐私模式 | 降低共享屏幕时暴露路径、Token 等信息的风险。 |
 | P0 | README 截图/GIF | 视觉型产品需要直观展示。 |
@@ -284,4 +284,3 @@ stateDiagram-v2
 | P1 | Add provider development guide |
 | P1 | Add GitHub release packaging script |
 | P2 | Add signed and notarized macOS release flow |
-

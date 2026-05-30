@@ -1,5 +1,5 @@
 import XCTest
-@testable import AgentsPet
+@testable import mahjong
 
 @MainActor
 final class AgentTaskStoreTests: XCTestCase {

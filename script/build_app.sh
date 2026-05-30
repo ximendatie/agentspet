@@ -5,18 +5,18 @@ cd "$(dirname "$0")/.."
 
 swift build >&2
 
-APP_DIR="$PWD/.build/AgentsPet.app"
+APP_DIR="$PWD/.build/mahjong.app"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
-ICON_SOURCE="$PWD/Resources/AgentsPetIcon.svg"
-ICONSET_DIR="$PWD/.build/AgentsPet.iconset"
-ICON_FILE="$PWD/.build/AgentsPet.icns"
+ICON_SOURCE="$PWD/Resources/mahjongIcon.svg"
+ICONSET_DIR="$PWD/.build/mahjong.iconset"
+ICON_FILE="$PWD/.build/mahjong.icns"
 
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 
-cp "$PWD/.build/debug/AgentsPet" "$MACOS_DIR/AgentsPet"
+cp "$PWD/.build/debug/mahjong" "$MACOS_DIR/mahjong"
 
 if [[ -f "$ICON_SOURCE" ]] && command -v magick >/dev/null 2>&1; then
   rm -rf "$ICONSET_DIR"
@@ -28,7 +28,7 @@ if [[ -f "$ICON_SOURCE" ]] && command -v magick >/dev/null 2>&1; then
   done
 
   iconutil -c icns "$ICONSET_DIR" -o "$ICON_FILE"
-  cp "$ICON_FILE" "$RESOURCES_DIR/AgentsPet.icns"
+  cp "$ICON_FILE" "$RESOURCES_DIR/mahjong.icns"
 fi
 
 if [[ -d "$PWD/Resources/MahjongTiles" ]]; then
@@ -47,15 +47,15 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleExecutable</key>
-  <string>AgentsPet</string>
+  <string>mahjong</string>
   <key>CFBundleIconFile</key>
-  <string>AgentsPet</string>
+  <string>mahjong</string>
   <key>CFBundleIdentifier</key>
-  <string>local.agentspet.mvp</string>
+  <string>local.mahjong.mvp</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
-  <string>AgentsPet</string>
+  <string>mahjong</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>

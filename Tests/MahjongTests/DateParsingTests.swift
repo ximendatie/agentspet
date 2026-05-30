@@ -1,5 +1,5 @@
 import XCTest
-@testable import AgentsPet
+@testable import mahjong
 
 final class DateParsingTests: XCTestCase {
     func testParseDateAcceptsFractionalInternetDateTime() throws {

@@ -25,7 +25,7 @@ struct BoardView: View {
     private var header: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Agent Board")
+                Text("mahjong Board")
                     .font(.title3.weight(.semibold))
                 Text("全局 Agent 运行状态")
                     .font(.caption)
@@ -587,7 +587,7 @@ private struct FutureTasksView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text("创建 \(selectedAgent.title) 任务")
                     .font(.headline)
-                Text("仅保存到 AgentsPet 本地计划列表")
+                Text("仅保存到 mahjong 本地计划列表")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

@@ -1,6 +1,6 @@
 # Security Policy
 
-AgentsPet observes local agent activity and should stay conservative about user
+mahjong observes local agent activity and should stay conservative about user
 data. Please report issues that could expose private prompts, session metadata,
 local paths, or provider files beyond the app's documented behavior.
 

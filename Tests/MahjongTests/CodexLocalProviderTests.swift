@@ -1,12 +1,12 @@
 import XCTest
-@testable import AgentsPet
+@testable import mahjong
 
 final class CodexLocalProviderTests: XCTestCase {
     private var temporaryHome: URL!
 
     override func setUpWithError() throws {
         temporaryHome = FileManager.default.temporaryDirectory
-            .appendingPathComponent("AgentsPetTests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("MahjongTests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: temporaryHome, withIntermediateDirectories: true)
     }
 
@@ -35,7 +35,7 @@ final class CodexLocalProviderTests: XCTestCase {
         )
 
         let session = """
-        {"timestamp":"2026-05-29T10:00:01Z","payload":{"cwd":"\(temporaryHome.path)/agentspet","model":"gpt-test"}}
+        {"timestamp":"2026-05-29T10:00:01Z","payload":{"cwd":"\(temporaryHome.path)/mahjong","model":"gpt-test"}}
         {"timestamp":"2026-05-29T10:00:02Z","type":"event_msg","payload":{"type":"task_started"}}
         {"timestamp":"2026-05-29T10:00:03Z","payload":{"info":{"total_token_usage":{"total_tokens":42}}}}
         """

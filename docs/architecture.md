@@ -1,11 +1,12 @@
 # Architecture Overview
 
-AgentsPet has three main layers:
+mahjong has three main layers:
 
 - Providers read local metadata and convert it into app-level models.
 - `AgentTaskStore` merges provider data, local overrides, runtime state, and
   future task drafts.
-- SwiftUI/AppKit views render the floating pet and Agent Board.
+- SwiftUI/AppKit views render the floating Mahjong-tile companion and mahjong
+  Board.
 
 ## Models
 
@@ -49,7 +50,8 @@ crashing the app.
 
 ## UI
 
-- `PetView` renders the floating companion.
+- `PetView` renders the floating companion and maps running session counts to
+  Mahjong tile icons.
 - `BoardView` renders task columns, runtime status, and future task drafts.
 - `PetWindowController` and `BoardWindowController` bridge SwiftUI views into
   macOS windows.

@@ -239,7 +239,7 @@ enum ProcessListReader {
             "node_repl",
             "skycomputeruseclient",
             "extension-host",
-            "agentspet",
+            "mahjong",
             " rg ",
             "/bin/ps"
         ]
@@ -257,7 +257,7 @@ enum ProcessListReader {
 
         let excludedMarkers = [
             "openclaw.app/",
-            "agentspet",
+            "mahjong",
             " rg ",
             "/bin/ps"
         ]
@@ -276,7 +276,7 @@ enum ProcessListReader {
 
         let excludedMarkers = [
             "hermes agent.app/",
-            "agentspet",
+            "mahjong",
             " rg ",
             "/bin/ps"
         ]

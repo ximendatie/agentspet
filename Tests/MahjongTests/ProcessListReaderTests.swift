@@ -1,5 +1,5 @@
 import XCTest
-@testable import AgentsPet
+@testable import mahjong
 
 final class ProcessListReaderTests: XCTestCase {
     func testArgumentsRemovesLeadingPID() {

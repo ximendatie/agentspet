@@ -3,22 +3,22 @@
 import PackageDescription
 
 let package = Package(
-    name: "AgentsPet",
+    name: "mahjong",
     platforms: [
         .macOS(.v14)
     ],
     products: [
-        .executable(name: "AgentsPet", targets: ["AgentsPet"])
+        .executable(name: "mahjong", targets: ["mahjong"])
     ],
     targets: [
         .executableTarget(
-            name: "AgentsPet",
+            name: "mahjong",
             path: "Sources"
         ),
         .testTarget(
-            name: "AgentsPetTests",
-            dependencies: ["AgentsPet"],
-            path: "Tests/AgentsPetTests"
+            name: "MahjongTests",
+            dependencies: ["mahjong"],
+            path: "Tests/MahjongTests"
         )
     ]
 )

@@ -3,7 +3,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-pkill -x AgentsPet 2>/dev/null || true
+pkill -x mahjong 2>/dev/null || true
 sleep 0.3
 
 APP_PATH="$(script/build_app.sh)"

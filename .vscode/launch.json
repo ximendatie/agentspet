@@ -19,6 +19,26 @@
             "target": "AgentsPet",
             "configuration": "release",
             "preLaunchTask": "swift: Build Release AgentsPet"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:mahjong}",
+            "name": "Debug mahjong",
+            "target": "mahjong",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug mahjong"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:mahjong}",
+            "name": "Release mahjong",
+            "target": "mahjong",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release mahjong"
         }
     ]
 }

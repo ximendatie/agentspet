@@ -1,16 +1,21 @@
-# AgentsPet
+# mahjong
 
-AgentsPet is a tiny macOS desktop companion for watching local AI agent work
+mahjong is a tiny macOS desktop companion for watching local AI agent work
 across desktop apps and terminal sessions.
 
 It is intentionally local-first and read-only: the app helps you see what your
 agents are doing without sending data anywhere, mutating provider config, or
 controlling other apps.
 
+The name comes from the app's interaction model: when multiple agent sessions
+are running, the floating companion switches between Mahjong tile icons so the
+current workload is visible at a glance.
+
 ## What It Does
 
-- Shows a floating desktop pet that reacts when local agents are working.
-- Opens an Agent Board with running, completed, and archived task cards.
+- Shows a floating Mahjong-tile desktop companion that reacts when local agents
+  are working.
+- Opens a mahjong Board with running, completed, and archived task cards.
 - Detects supported desktop apps and terminal agent processes.
 - Reads local session metadata for supported providers.
 - Lets you draft "future tasks" locally so you can capture work for later.
@@ -24,7 +29,7 @@ script/build_and_run.sh
 The first version uses local mock task data. Click the pet to open the Agent
 Board, then use the board controls to add, complete, and archive sample tasks.
 
-The script builds a local `.app` bundle at `.build/AgentsPet.app` and opens it
+The script builds a local `.app` bundle at `.build/mahjong.app` and opens it
 through macOS LaunchServices.
 
 ## Requirements
@@ -48,7 +53,7 @@ swift test
 
 ## Safety Boundaries
 
-AgentsPet uses read-only local observation by default:
+mahjong uses read-only local observation by default:
 
 - It does not show full conversation bodies by default. Task cards only show
   thread title, status, model, provider, and token usage when those fields are

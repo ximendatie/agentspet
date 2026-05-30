@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping make AgentsPet more useful. The project is small on purpose:
+Thanks for helping make mahjong more useful. The project is small on purpose:
 local observation, clear privacy boundaries, and fast iteration.
 
 ## Development Setup

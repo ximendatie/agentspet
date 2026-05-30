@@ -1,6 +1,6 @@
 # Privacy Notes
 
-AgentsPet is designed as a local-first observer for AI agent activity on macOS.
+mahjong is designed as a local-first observer for AI agent activity on macOS.
 It does not upload session data and does not control provider apps.
 
 ## Local Data Read By Current Providers
@@ -20,7 +20,7 @@ Task cards are intended to show compact metadata such as title, provider,
 status, model, token usage, and recent activity time. The app avoids displaying
 full conversation bodies by default.
 
-## What AgentsPet Does Not Do
+## What mahjong Does Not Do
 
 - It does not send prompts, session files, or task data to a server.
 - It does not write to provider config, session, or cache files.

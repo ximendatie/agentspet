@@ -16,7 +16,7 @@ final class PetWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "AgentsPet"
+        window.title = "mahjong"
         window.isOpaque = false
         window.backgroundColor = .clear
         window.hasShadow = false

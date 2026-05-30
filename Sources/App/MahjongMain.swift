@@ -1,7 +1,7 @@
 import AppKit
 
 @main
-enum AgentsPetMain {
+enum MahjongMain {
     @MainActor private static var appDelegate: AppDelegate?
 
     @MainActor

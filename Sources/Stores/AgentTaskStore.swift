@@ -7,7 +7,8 @@ final class AgentTaskStore: ObservableObject {
     @Published private(set) var futureTasks: [FutureAgentTask]
     @Published private(set) var completionPulseID: UUID?
 
-    private static let futureTasksStorageKey = "local.agentspet.futureTasks"
+    private static let futureTasksStorageKey = "local.mahjong.futureTasks"
+    private static let legacyFutureTasksStorageKey = "local.agentspet.futureTasks"
 
     private let providers: [AgentTaskProvider]
     private let runtimeProviders: [AgentRuntimeProvider]
@@ -263,7 +264,10 @@ final class AgentTaskStore: ObservableObject {
     }
 
     private static func loadFutureTasks() -> [FutureAgentTask] {
-        guard let data = UserDefaults.standard.data(forKey: futureTasksStorageKey) else {
+        let defaults = UserDefaults.standard
+        guard let data = defaults.data(forKey: futureTasksStorageKey)
+            ?? defaults.data(forKey: legacyFutureTasksStorageKey)
+        else {
             return []
         }
 

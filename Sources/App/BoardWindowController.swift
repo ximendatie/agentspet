@@ -16,7 +16,7 @@ final class BoardWindowController: NSObject, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "Agent Board"
+        window.title = "mahjong Board"
         window.minSize = NSSize(width: 760, height: 420)
         window.level = .normal
         window.hidesOnDeactivate = false
