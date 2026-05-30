@@ -3,6 +3,8 @@ import Foundation
 struct CodexLocalProvider: AgentTaskProvider {
     let providerName = "Codex"
 
+    private static let runningActivityWindow: TimeInterval = 30 * 60
+
     private let codexDirectory: URL
 
     init(homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser) {
@@ -19,48 +21,62 @@ struct CodexLocalProvider: AgentTaskProvider {
         let indexURL = codexDirectory.appendingPathComponent("session_index.jsonl")
         let sessionsDirectory = codexDirectory.appendingPathComponent("sessions", isDirectory: true)
         let indexEntries = readSessionIndex(from: indexURL)
-        guard !indexEntries.isEmpty else {
-            return []
-        }
+        let indexByID = Dictionary(uniqueKeysWithValues: indexEntries.map { ($0.id, $0) })
 
         let sessionFiles = findJSONLFiles(in: sessionsDirectory)
-        let fileBySessionID = Dictionary(uniqueKeysWithValues: sessionFiles.compactMap { url -> (String, URL)? in
-            guard let id = extractCodexSessionID(from: url.lastPathComponent) else {
-                return nil
-            }
-            return (id, url)
-        })
+        var tasksByID: [String: AgentTask] = [:]
 
-        return indexEntries.compactMap { entry in
-            guard let fileURL = fileBySessionID[entry.id] else {
-                return AgentTask(
-                    id: "codex:\(entry.id)",
-                    title: entry.threadName,
-                    summary: "Codex 会话已记录，未找到本地事件流",
-                    agent: "Codex",
-                    model: "unknown",
-                    tokenUsage: 0,
-                    status: status(for: entry.updatedAt, completed: true),
-                    updatedAt: entry.updatedAt
-                )
-            }
-
+        for fileURL in sessionFiles {
             let metadata = readCodexSessionMetadata(from: fileURL)
-            let updatedAt = metadata.lastTimestamp ?? entry.updatedAt
-            let completed = metadata.lastTaskEvent != "task_started"
+            guard let sessionID = metadata.sessionID ?? extractCodexSessionID(from: fileURL.lastPathComponent) else {
+                continue
+            }
 
-            return AgentTask(
-                id: "codex:\(entry.id)",
-                title: entry.threadName,
-                summary: codexSummary(statusEvent: metadata.lastTaskEvent, cwd: metadata.cwd),
+            let indexEntry = indexByID[sessionID]
+            let updatedAt = metadata.lastTimestamp
+                ?? indexEntry?.updatedAt
+                ?? fileModifiedAt(fileURL)
+                ?? Date.distantPast
+            let isRunning = isActivelyRunning(metadata: metadata, updatedAt: updatedAt)
+
+            let task = AgentTask(
+                id: "codex:\(sessionID)",
+                title: indexEntry?.threadName
+                    ?? metadata.title
+                    ?? "Codex 会话 \(sessionID.prefix(8))",
+                summary: codexSummary(
+                    statusEvent: metadata.lastTaskEvent,
+                    cwd: metadata.cwd,
+                    isRunning: isRunning
+                ),
                 agent: "Codex",
                 model: metadata.model ?? "unknown",
                 tokenUsage: metadata.totalTokens,
-                status: completed ? status(for: updatedAt, completed: true) : .running,
+                status: isRunning ? .running : status(for: updatedAt, completed: true),
                 updatedAt: updatedAt,
                 openURL: fileURL
             )
+
+            if let existing = tasksByID[task.id], existing.updatedAt > task.updatedAt {
+                continue
+            }
+            tasksByID[task.id] = task
         }
+
+        for entry in indexEntries where tasksByID["codex:\(entry.id)"] == nil {
+            tasksByID["codex:\(entry.id)"] = AgentTask(
+                id: "codex:\(entry.id)",
+                title: entry.threadName,
+                summary: "Codex 会话已记录，未找到本地事件流",
+                agent: "Codex",
+                model: "unknown",
+                tokenUsage: 0,
+                status: status(for: entry.updatedAt, completed: true),
+                updatedAt: entry.updatedAt
+            )
+        }
+
+        return Array(tasksByID.values)
     }
 
     private func readSessionIndex(from url: URL) -> [CodexIndexEntry] {
@@ -108,6 +124,16 @@ struct CodexLocalProvider: AgentTaskProvider {
                 continue
             }
 
+            if object["type"] as? String == "session_meta" {
+                if let id = payload["id"] as? String {
+                    metadata.sessionID = id
+                }
+
+                if let cwd = payload["cwd"] as? String {
+                    metadata.cwd = cwd
+                }
+            }
+
             if let cwd = payload["cwd"] as? String {
                 metadata.cwd = cwd
             }
@@ -137,6 +163,10 @@ struct CodexLocalProvider: AgentTaskProvider {
                 let tokens = usage["total_tokens"] as? Int {
                 metadata.totalTokens = max(metadata.totalTokens, tokens)
             }
+
+            if metadata.title == nil {
+                metadata.title = titleCandidate(from: object, payload: payload)
+            }
         }
 
         return metadata
@@ -164,12 +194,14 @@ struct CodexLocalProvider: AgentTaskProvider {
         return trimmed.split(separator: "-").suffix(5).joined(separator: "-").nilIfEmpty
     }
 
-    private func codexSummary(statusEvent: String?, cwd: String?) -> String {
+    private func codexSummary(statusEvent: String?, cwd: String?, isRunning: Bool) -> String {
         let location = cwd.flatMap { URL(fileURLWithPath: $0).lastPathComponent.nilIfEmpty }
 
         switch statusEvent {
-        case "task_started":
+        case "task_started" where isRunning:
             return location.map { "正在处理本地任务：\($0)" } ?? "正在处理本地 Codex 任务"
+        case "task_started":
+            return location.map { "任务已停止更新：\($0)" } ?? "Codex 任务已停止更新"
         case "task_complete":
             return location.map { "最近完成于：\($0)" } ?? "最近完成一个 Codex 任务"
         default:
@@ -184,6 +216,67 @@ struct CodexLocalProvider: AgentTaskProvider {
 
         return Date().timeIntervalSince(updatedAt) < 24 * 60 * 60 ? .completed : .history
     }
+
+    private func isActivelyRunning(metadata: CodexSessionMetadata, updatedAt: Date) -> Bool {
+        guard metadata.lastTaskEvent == "task_started" else {
+            return false
+        }
+
+        return Date().timeIntervalSince(updatedAt) < Self.runningActivityWindow
+    }
+
+    private func fileModifiedAt(_ url: URL) -> Date? {
+        try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+    }
+
+    private func titleCandidate(from object: [String: Any], payload: [String: Any]) -> String? {
+        if object["type"] as? String == "event_msg",
+           let eventType = payload["type"] as? String,
+           eventType == "user_message",
+           let message = payload["message"] as? String {
+            return trimmedTitle(message)
+        }
+
+        guard
+            object["type"] as? String == "response_item",
+            payload["type"] as? String == "message",
+            payload["role"] as? String == "user",
+            let content = payload["content"] as? [[String: Any]]
+        else {
+            return nil
+        }
+
+        for item in content {
+            if let text = item["text"] as? String {
+                return trimmedTitle(text)
+            }
+        }
+
+        return nil
+    }
+
+    private func trimmedTitle(_ value: String) -> String? {
+        let title = value
+            .split(whereSeparator: \.isNewline)
+            .first
+            .map(String.init)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard let title, !title.isEmpty else {
+            return nil
+        }
+
+        guard !title.hasPrefix("<environment_context>"),
+              !title.hasPrefix("<turn_aborted>") else {
+            return nil
+        }
+
+        if title.count <= 80 {
+            return title
+        }
+
+        return "\(title.prefix(80))..."
+    }
 }
 
 private struct CodexIndexEntry {
@@ -193,8 +286,10 @@ private struct CodexIndexEntry {
 }
 
 private struct CodexSessionMetadata {
+    var sessionID: String?
     var lastTimestamp: Date?
     var lastTaskEvent: String?
+    var title: String?
     var model: String?
     var cwd: String?
     var totalTokens = 0

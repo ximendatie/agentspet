@@ -19,6 +19,7 @@ final class CodexLocalProviderTests: XCTestCase {
 
     func testFetchTasksReadsCodexIndexAndSessionMetadata() async throws {
         let sessionID = "11111111-2222-3333-4444-555555555555"
+        let now = ISO8601DateFormatter().string(from: Date())
         let codexDirectory = temporaryHome.appendingPathComponent(".codex", isDirectory: true)
         let sessionsDirectory = codexDirectory
             .appendingPathComponent("sessions", isDirectory: true)
@@ -26,7 +27,7 @@ final class CodexLocalProviderTests: XCTestCase {
         try FileManager.default.createDirectory(at: sessionsDirectory, withIntermediateDirectories: true)
 
         let index = """
-        {"id":"\(sessionID)","thread_name":"Open source polish","updated_at":"2026-05-29T10:00:00Z"}
+        {"id":"\(sessionID)","thread_name":"Open source polish","updated_at":"\(now)"}
         """
         try index.write(
             to: codexDirectory.appendingPathComponent("session_index.jsonl"),
@@ -35,9 +36,9 @@ final class CodexLocalProviderTests: XCTestCase {
         )
 
         let session = """
-        {"timestamp":"2026-05-29T10:00:01Z","payload":{"cwd":"\(temporaryHome.path)/mahjong","model":"gpt-test"}}
-        {"timestamp":"2026-05-29T10:00:02Z","type":"event_msg","payload":{"type":"task_started"}}
-        {"timestamp":"2026-05-29T10:00:03Z","payload":{"info":{"total_token_usage":{"total_tokens":42}}}}
+        {"timestamp":"\(now)","payload":{"cwd":"\(temporaryHome.path)/mahjong","model":"gpt-test"}}
+        {"timestamp":"\(now)","type":"event_msg","payload":{"type":"task_started"}}
+        {"timestamp":"\(now)","payload":{"info":{"total_token_usage":{"total_tokens":42}}}}
         """
         let sessionURL = sessionsDirectory.appendingPathComponent("rollout-\(sessionID).jsonl")
         try session.write(to: sessionURL, atomically: true, encoding: .utf8)
@@ -61,5 +62,64 @@ final class CodexLocalProviderTests: XCTestCase {
     func testFetchTasksReturnsEmptyWhenIndexIsMissing() async {
         let tasks = await CodexLocalProvider(homeDirectory: temporaryHome).fetchTasks()
         XCTAssertTrue(tasks.isEmpty)
+    }
+
+    func testFetchTasksReadsSessionFilesWhenIndexIsStaleOrMissing() async throws {
+        let sessionID = "22222222-3333-4444-5555-666666666666"
+        let sessionsDirectory = temporaryHome
+            .appendingPathComponent(".codex", isDirectory: true)
+            .appendingPathComponent("sessions", isDirectory: true)
+            .appendingPathComponent("2026", isDirectory: true)
+            .appendingPathComponent("05", isDirectory: true)
+            .appendingPathComponent("30", isDirectory: true)
+        try FileManager.default.createDirectory(at: sessionsDirectory, withIntermediateDirectories: true)
+
+        let session = """
+        {"timestamp":"2026-05-30T07:00:00Z","type":"session_meta","payload":{"id":"\(sessionID)","cwd":"\(temporaryHome.path)/mahjong","originator":"Codex Desktop"}}
+        {"timestamp":"2026-05-30T07:00:01Z","type":"turn_context","payload":{"cwd":"\(temporaryHome.path)/mahjong","model":"gpt-live"}}
+        {"timestamp":"2026-05-30T07:00:02Z","type":"event_msg","payload":{"type":"user_message","message":"Fix live detection\\n"}}
+        {"timestamp":"2026-05-30T07:00:03Z","type":"event_msg","payload":{"type":"task_started"}}
+        """
+        let sessionURL = sessionsDirectory.appendingPathComponent("rollout-2026-05-30T15-00-00-\(sessionID).jsonl")
+        try session.write(to: sessionURL, atomically: true, encoding: .utf8)
+
+        let tasks = await CodexLocalProvider(homeDirectory: temporaryHome).fetchTasks()
+
+        XCTAssertEqual(tasks.count, 1)
+        let task = try XCTUnwrap(tasks.first)
+        XCTAssertEqual(task.id, "codex:\(sessionID)")
+        XCTAssertEqual(task.title, "Fix live detection")
+        XCTAssertEqual(task.model, "gpt-live")
+        XCTAssertEqual(task.status, .running)
+        XCTAssertEqual(
+            task.openURL?.resolvingSymlinksInPath().path,
+            sessionURL.resolvingSymlinksInPath().path
+        )
+    }
+
+    func testStaleStartedSessionIsNotRunningAndSkipsEnvironmentTitle() async throws {
+        let sessionID = "33333333-4444-5555-6666-777777777777"
+        let sessionsDirectory = temporaryHome
+            .appendingPathComponent(".codex", isDirectory: true)
+            .appendingPathComponent("sessions", isDirectory: true)
+            .appendingPathComponent("2026", isDirectory: true)
+        try FileManager.default.createDirectory(at: sessionsDirectory, withIntermediateDirectories: true)
+
+        let session = """
+        {"timestamp":"2026-05-24T15:18:53Z","type":"session_meta","payload":{"id":"\(sessionID)","cwd":"\(temporaryHome.path)/agentspet"}}
+        {"timestamp":"2026-05-24T15:18:53Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"<environment_context>\\n  <cwd>\(temporaryHome.path)</cwd>\\n</environment_context>"}]}}
+        {"timestamp":"2026-05-24T15:18:54Z","type":"event_msg","payload":{"type":"user_message","message":"Add OpenClaw detection\\n"}}
+        {"timestamp":"2026-05-24T15:44:29Z","type":"event_msg","payload":{"type":"task_started"}}
+        {"timestamp":"2026-05-24T15:48:44Z","type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"total_tokens":425574}}}}
+        """
+        let sessionURL = sessionsDirectory.appendingPathComponent("rollout-\(sessionID).jsonl")
+        try session.write(to: sessionURL, atomically: true, encoding: .utf8)
+
+        let tasks = await CodexLocalProvider(homeDirectory: temporaryHome).fetchTasks()
+
+        let task = try XCTUnwrap(tasks.first)
+        XCTAssertEqual(task.title, "Add OpenClaw detection")
+        XCTAssertNotEqual(task.status, .running)
+        XCTAssertEqual(task.tokenUsage, 425574)
     }
 }
