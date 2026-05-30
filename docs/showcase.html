@@ -19,7 +19,7 @@
       --coral: #d84f3f;
       --gold: #c89428;
       --indigo: #344e86;
-      --shadow: 0 26px 70px rgba(28, 24, 16, 0.18);
+      --shadow: 0 30px 82px rgba(28, 24, 16, 0.16);
       --radius: 8px;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
     }
@@ -44,7 +44,7 @@
     }
 
     .page {
-      width: min(1180px, calc(100vw - 32px));
+      width: min(1320px, calc(100vw - 40px));
       margin: 0 auto;
       padding: 24px 0 56px;
     }
@@ -92,10 +92,10 @@
     }
 
     .hero {
-      min-height: calc(100vh - 128px);
+      min-height: calc(100vh - 118px);
       display: grid;
-      grid-template-columns: minmax(0, 0.88fr) minmax(420px, 1.12fr);
-      gap: 32px;
+      grid-template-columns: minmax(360px, 0.72fr) minmax(620px, 1.28fr);
+      gap: 44px;
       align-items: center;
       padding-bottom: 40px;
     }
@@ -124,9 +124,9 @@
 
     h1 {
       margin: 0;
-      max-width: 10ch;
-      font-size: clamp(54px, 8vw, 112px);
-      line-height: 0.9;
+      max-width: 11ch;
+      font-size: clamp(54px, 6.3vw, 94px);
+      line-height: 0.94;
       letter-spacing: 0;
     }
 
@@ -170,7 +170,7 @@
 
     .stage-wrap {
       position: relative;
-      min-height: 580px;
+      min-height: 620px;
       border: 1px solid var(--line);
       border-radius: 12px;
       background:
@@ -189,10 +189,10 @@
 
     .window {
       position: absolute;
-      left: 34px;
-      right: 34px;
-      top: 64px;
-      min-height: 360px;
+      left: 38px;
+      right: 38px;
+      top: 58px;
+      min-height: 390px;
       border: 1px solid rgba(21, 23, 20, 0.16);
       border-radius: 10px;
       background: rgba(252, 250, 242, 0.88);
@@ -263,7 +263,7 @@
     .board-body {
       display: grid;
       grid-template-columns: 112px 1fr;
-      min-height: 302px;
+      min-height: 332px;
     }
 
     .sidebar {
@@ -293,7 +293,7 @@
     }
 
     .column {
-      padding: 15px;
+      padding: 18px;
       border-right: 1px solid var(--line);
       min-width: 0;
     }
@@ -310,9 +310,9 @@
     }
 
     .task-card {
-      min-height: 104px;
+      min-height: 112px;
       margin-bottom: 10px;
-      padding: 13px;
+      padding: 14px;
       border: 1px solid rgba(21, 23, 20, 0.1);
       border-radius: var(--radius);
       background: rgba(255, 255, 255, 0.58);
@@ -350,9 +350,9 @@
 
     .floating-pet {
       position: absolute;
-      left: 38px;
-      bottom: 36px;
-      width: 112px;
+      left: 42px;
+      bottom: 38px;
+      width: 118px;
       height: 136px;
       display: grid;
       place-items: center;
@@ -394,26 +394,31 @@
 
     .runtime-strip {
       position: absolute;
-      right: 34px;
-      bottom: 34px;
-      display: grid;
-      grid-template-columns: repeat(4, minmax(72px, 1fr));
-      gap: 10px;
-      width: min(430px, calc(100% - 190px));
+      right: 42px;
+      bottom: 44px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: calc(100% - 204px);
+      min-height: 64px;
+      padding: 10px;
+      border: 1px solid rgba(21, 23, 20, 0.1);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(12px);
     }
 
     .runtime {
-      min-height: 78px;
-      padding: 11px;
-      border: 1px solid rgba(21, 23, 20, 0.1);
-      border-radius: var(--radius);
-      background: rgba(255, 255, 255, 0.56);
-      backdrop-filter: blur(12px);
+      flex: 1;
+      min-width: 0;
+      min-height: 44px;
+      padding: 0 10px;
+      border-left: 1px solid rgba(21, 23, 20, 0.1);
     }
 
     .runtime b {
       display: block;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       font-size: 12px;
     }
 
@@ -425,7 +430,7 @@
 
     .status-line {
       height: 4px;
-      margin-top: 10px;
+      margin-top: 7px;
       border-radius: 999px;
       background: linear-gradient(90deg, var(--jade), var(--gold), var(--coral));
       transform-origin: left;
@@ -787,11 +792,6 @@
                   <strong>重构 provider 状态合并</strong>
                   <p>Codex 本地会话正在刷新任务索引。</p>
                   <div class="meta-row"><span>codex</span><span>18.4k tokens</span></div>
-                </article>
-                <article class="task-card live-card">
-                  <strong>整理 Claude Desktop 会话</strong>
-                  <p>进程检测与 resume metadata 正在关联。</p>
-                  <div class="meta-row"><span>claude</span><span>7.1k tokens</span></div>
                 </article>
               </section>
 
