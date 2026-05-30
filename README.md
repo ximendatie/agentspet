@@ -75,6 +75,7 @@ AgentsPet uses read-only local observation by default:
 
 - [Privacy and security notes](docs/privacy.md)
 - [Architecture overview](docs/architecture.md)
+- [Roadmap](docs/roadmap.md)
 - [Contributing guide](CONTRIBUTING.md)
 
 ## Roadmap
