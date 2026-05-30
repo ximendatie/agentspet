@@ -94,8 +94,8 @@
     .hero {
       min-height: calc(100vh - 118px);
       display: grid;
-      grid-template-columns: minmax(360px, 0.72fr) minmax(620px, 1.28fr);
-      gap: 44px;
+      grid-template-columns: minmax(0, 0.95fr) minmax(280px, 0.45fr);
+      gap: 34px 56px;
       align-items: center;
       padding-bottom: 40px;
     }
@@ -145,6 +145,103 @@
       margin-top: 28px;
     }
 
+    .hero-pet {
+      position: relative;
+      justify-self: center;
+      width: min(330px, 34vw);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      isolation: isolate;
+    }
+
+    .hero-pet::before,
+    .hero-pet::after {
+      content: "";
+      position: absolute;
+      inset: 12%;
+      border: 1px solid rgba(13, 143, 120, 0.22);
+      border-radius: 50%;
+      animation: ringPulse 3.2s ease-in-out infinite;
+    }
+
+    .hero-pet::after {
+      inset: 23%;
+      border-color: rgba(200, 148, 40, 0.28);
+      animation-delay: -1.4s;
+    }
+
+    .pet-orbit {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.6), transparent 50%),
+        conic-gradient(from 120deg, transparent, rgba(13, 143, 120, 0.18), transparent 35%, rgba(216, 79, 63, 0.16), transparent 72%);
+      filter: blur(0.2px);
+      opacity: 0.9;
+      animation: orbitSpin 12s linear infinite;
+      z-index: -1;
+    }
+
+    .hero-tile-stack {
+      position: relative;
+      width: 148px;
+      height: 176px;
+      animation: petFloat 3.6s ease-in-out infinite;
+    }
+
+    .hero-tile-stack img {
+      position: absolute;
+      width: 132px;
+      height: 158px;
+      object-fit: contain;
+      filter: drop-shadow(0 26px 28px rgba(28, 24, 16, 0.25));
+    }
+
+    .hero-tile-stack img:nth-child(1) {
+      transform: rotate(-10deg) translate(-24px, 19px);
+      opacity: 0.48;
+    }
+
+    .hero-tile-stack img:nth-child(2) {
+      transform: rotate(8deg) translate(24px, 12px);
+      opacity: 0.68;
+    }
+
+    .hero-tile-stack img:nth-child(3) {
+      transform: translate(8px, -8px);
+      animation: tileNudge 2.4s ease-in-out infinite;
+    }
+
+    .pet-status-chip {
+      position: absolute;
+      right: 18%;
+      bottom: 18%;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 11px;
+      border: 1px solid rgba(13, 143, 120, 0.22);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.7);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 760;
+      box-shadow: 0 14px 34px rgba(28, 24, 16, 0.12);
+      backdrop-filter: blur(14px);
+      animation: chipFloat 3s ease-in-out infinite;
+    }
+
+    .pet-status-chip::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--jade);
+      box-shadow: 0 0 0 6px rgba(13, 143, 120, 0.14);
+    }
+
     .button {
       display: inline-flex;
       align-items: center;
@@ -169,6 +266,7 @@
     }
 
     .stage-wrap {
+      grid-column: 1 / -1;
       position: relative;
       min-height: 620px;
       border: 1px solid var(--line);
@@ -621,6 +719,50 @@
       }
     }
 
+    @keyframes petFloat {
+      0%, 100% {
+        transform: translateY(0) rotate(-1deg);
+      }
+      50% {
+        transform: translateY(-16px) rotate(2deg);
+      }
+    }
+
+    @keyframes tileNudge {
+      0%, 100% {
+        transform: translate(8px, -8px) rotate(0deg);
+      }
+      50% {
+        transform: translate(8px, -18px) rotate(3deg);
+      }
+    }
+
+    @keyframes ringPulse {
+      0%, 100% {
+        transform: scale(0.88);
+        opacity: 0.34;
+      }
+      50% {
+        transform: scale(1.08);
+        opacity: 0.78;
+      }
+    }
+
+    @keyframes orbitSpin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes chipFloat {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-8px);
+      }
+    }
+
     @keyframes workline {
       0%, 100% {
         transform: scaleX(0.28);
@@ -634,6 +776,10 @@
       .hero {
         grid-template-columns: 1fr;
         min-height: auto;
+      }
+
+      .hero-pet {
+        width: min(300px, 70vw);
       }
 
       .stage-wrap {
@@ -669,6 +815,10 @@
 
       .hero {
         gap: 22px;
+      }
+
+      .hero-pet {
+        width: min(260px, 78vw);
       }
 
       .stage-wrap {
@@ -750,16 +900,26 @@
 
     <section class="hero" aria-labelledby="showcase-title">
       <div class="hero-copy">
-        <p class="eyebrow">local-first agent companion</p>
-        <h1 id="showcase-title">mahjong visual showcase</h1>
+        <p class="eyebrow">本地 AI Agent 桌宠</p>
+        <h1 id="showcase-title">一张牌看懂 Agent 状态</h1>
         <p class="lede">
-          一个用于展示 mahjong 产品气质的视觉页面：悬浮麻将牌、Agent Board、provider 状态和只读观察边界被放在同一个可视化舞台里。
+          mahjong 是一个本地优先的 macOS 桌面伴侣：悬浮麻将牌提示正在运行的 AI Agent 数量，点击打开看板查看 Codex、Claude、Hermes、ChatGPT Desktop 等本地会话与进程状态。只读观察，不上传、不控制。
         </p>
         <div class="hero-actions">
-          <button class="button primary" type="button" data-mode="working">运行态</button>
-          <button class="button" type="button" data-mode="quiet">静默态</button>
-          <button class="button" type="button" data-mode="privacy">隐私态</button>
+          <button class="button primary" type="button" data-mode="working">工作中</button>
+          <button class="button" type="button" data-mode="quiet">空闲</button>
+          <button class="button" type="button" data-mode="privacy">隐私模式</button>
         </div>
+      </div>
+
+      <div class="hero-pet" aria-label="桌面宠物主视觉">
+        <div class="pet-orbit" aria-hidden="true"></div>
+        <div class="hero-tile-stack">
+          <img src="../Resources/MahjongTiles/dot-1.png" alt="">
+          <img src="../Resources/MahjongTiles/dot-5.png" alt="">
+          <img id="heroActiveTile" src="../Resources/MahjongTiles/dot-3.png" alt="三筒">
+        </div>
+        <div class="pet-status-chip" id="heroPetStatus">3 running</div>
       </div>
 
       <div class="stage-wrap" id="stage">
@@ -926,8 +1086,10 @@
     const context = canvas.getContext("2d");
     const buttons = Array.from(document.querySelectorAll("[data-mode]"));
     const activeTile = document.getElementById("activeTile");
+    const heroActiveTile = document.getElementById("heroActiveTile");
     const runningLabel = document.getElementById("runningLabel");
     const privacyPill = document.getElementById("privacyPill");
+    const heroPetStatus = document.getElementById("heroPetStatus");
     const liveCards = Array.from(document.querySelectorAll(".live-card"));
     let mode = "working";
     let particles = [];
@@ -998,24 +1160,33 @@
       if (nextMode === "working") {
         activeTile.src = "../Resources/MahjongTiles/dot-3.png";
         activeTile.alt = "三筒";
+        heroActiveTile.src = "../Resources/MahjongTiles/dot-3.png";
+        heroActiveTile.alt = "三筒";
         runningLabel.textContent = "3 running";
         privacyPill.textContent = "read-only";
+        heroPetStatus.textContent = "3 running";
         liveCards.forEach((card) => card.style.opacity = "1");
       }
 
       if (nextMode === "quiet") {
         activeTile.src = "../Resources/MahjongTiles/white.png";
         activeTile.alt = "白板";
+        heroActiveTile.src = "../Resources/MahjongTiles/white.png";
+        heroActiveTile.alt = "白板";
         runningLabel.textContent = "0 running";
         privacyPill.textContent = "idle";
+        heroPetStatus.textContent = "idle";
         liveCards.forEach((card) => card.style.opacity = "0.52");
       }
 
       if (nextMode === "privacy") {
         activeTile.src = "../Resources/MahjongTiles/dot-9.png";
         activeTile.alt = "九筒";
+        heroActiveTile.src = "../Resources/MahjongTiles/dot-9.png";
+        heroActiveTile.alt = "九筒";
         runningLabel.textContent = "hidden";
         privacyPill.textContent = "privacy";
+        heroPetStatus.textContent = "privacy";
         liveCards.forEach((card) => card.style.opacity = "0.34");
       }
     }

@@ -54,9 +54,8 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             return
         }
 
-        button.image = NSImage(systemSymbolName: "rectangle.3.group", accessibilityDescription: "mahjong")
-        button.imagePosition = .imageLeading
-        button.title = taskStore.runningCount > 0 ? " \(taskStore.runningCount)" : ""
+        button.image = nil
+        button.title = taskStore.runningCount > 0 ? "🀄️ \(taskStore.runningCount)" : "🀄️"
         button.toolTip = "\(taskStore.runningCount) running, \(taskStore.runningAgentCount) agents"
     }
 
