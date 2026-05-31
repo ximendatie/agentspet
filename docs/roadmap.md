@@ -246,11 +246,11 @@ stateDiagram-v2
 
 | 优先级 | 工作项 | 原因 |
 | --- | --- | --- |
-| P1 | 自动化 Release 构建 | 让发布流程可重复。 |
-| P1 | `.dmg` 打包 | 改善安装体验。 |
-| P1 | Code signing | 降低用户打开 App 的阻力。 |
-| P1 | Notarization | 提升 macOS 信任体验。 |
-| P2 | Changelog 自动化 | 让 Release notes 更稳定。 |
+| Done | 自动化 Release 构建 | 已增加 tag 触发的 GitHub Actions release workflow。 |
+| Done | `.dmg` 打包 | 已增加 `script/build_release_dmg.sh`。 |
+| Done | Code signing | 已增加 `script/sign_app.sh`，支持 Developer ID 或 ad-hoc fallback。 |
+| Done | Notarization | 已增加 `script/notarize.sh`，支持 notarytool profile 或 Apple ID credentials。 |
+| Done | Changelog 自动化 | 已增加 `CHANGELOG.md` 和 release guide；后续可继续自动生成 notes。 |
 | P2 | Sparkle 自动更新 | Release 流程稳定后再考虑。 |
 
 验收标准：

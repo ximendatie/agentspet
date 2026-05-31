@@ -5,6 +5,8 @@ cd "$(dirname "$0")/.."
 
 swift build >&2
 
+VERSION="${MAHJONG_VERSION:-$(tr -d '[:space:]' < VERSION)}"
+BUILD_NUMBER="${MAHJONG_BUILD_NUMBER:-$(git rev-list --count HEAD 2>/dev/null || echo 1)}"
 APP_DIR="$PWD/.build/mahjong.app"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
@@ -39,7 +41,7 @@ if [[ -d "$PWD/Resources/AgentIcons" ]]; then
   cp -R "$PWD/Resources/AgentIcons" "$RESOURCES_DIR/AgentIcons"
 fi
 
-cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
+cat > "$CONTENTS_DIR/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -59,9 +61,9 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.1.2</string>
+  <string>$VERSION</string>
   <key>CFBundleVersion</key>
-  <string>3</string>
+  <string>$BUILD_NUMBER</string>
   <key>LSMinimumSystemVersion</key>
   <string>14.0</string>
   <key>LSUIElement</key>
