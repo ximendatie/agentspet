@@ -9,7 +9,7 @@ APP_DIR="$PWD/.build/mahjong.app"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
-ICON_SOURCE="$PWD/Resources/mahjongIcon.svg"
+ICON_SOURCE="$PWD/Resources/MahjongTiles/red.png"
 ICONSET_DIR="$PWD/.build/mahjong.iconset"
 ICON_FILE="$PWD/.build/mahjong.icns"
 
@@ -59,9 +59,9 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.1.0</string>
+  <string>0.1.2</string>
   <key>CFBundleVersion</key>
-  <string>1</string>
+  <string>3</string>
   <key>LSMinimumSystemVersion</key>
   <string>14.0</string>
   <key>LSUIElement</key>
