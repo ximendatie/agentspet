@@ -7,6 +7,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     private let onOpenBoard: () -> Void
     private var statusItem: NSStatusItem?
     private var cancellables: Set<AnyCancellable> = []
+    private var pendingStatusItemUpdate: Task<Void, Never>?
 
     init(taskStore: AgentTaskStore, onOpenBoard: @escaping () -> Void) {
         self.taskStore = taskStore
@@ -21,11 +22,15 @@ final class MenuBarController: NSObject, NSMenuDelegate {
 
         Publishers.CombineLatest3(taskStore.$tasks, taskStore.$runtimes, taskStore.$isPrivacyModeEnabled)
             .sink { [weak self] _, _, _ in
-                self?.updateStatusItem()
+                self?.scheduleStatusItemUpdate()
             }
             .store(in: &cancellables)
 
         setStatusItemEnabled(taskStore.isMenuBarEnabled)
+    }
+
+    deinit {
+        pendingStatusItemUpdate?.cancel()
     }
 
     func menuWillOpen(_ menu: NSMenu) {
@@ -57,6 +62,17 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         button.image = nil
         button.title = taskStore.runningCount > 0 ? "🀄️ \(taskStore.runningCount)" : "🀄️"
         button.toolTip = "\(taskStore.runningCount) running, \(taskStore.runningAgentCount) agents"
+    }
+
+    private func scheduleStatusItemUpdate() {
+        pendingStatusItemUpdate?.cancel()
+        pendingStatusItemUpdate = Task { @MainActor [weak self] in
+            await Task.yield()
+            guard let self, !Task.isCancelled else {
+                return
+            }
+            self.updateStatusItem()
+        }
     }
 
     private func rebuildMenu() {

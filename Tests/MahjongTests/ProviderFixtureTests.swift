@@ -263,6 +263,78 @@ final class ProviderFixtureTests: XCTestCase {
         XCTAssertEqual(task.status, .interrupted)
     }
 
+    func testOpenClawRunningTrajectoryMapsTaskRunning() async throws {
+        let sessionsDirectory = temporaryHome
+            .appendingPathComponent(".openclaw", isDirectory: true)
+            .appendingPathComponent("agents", isDirectory: true)
+            .appendingPathComponent("main", isDirectory: true)
+            .appendingPathComponent("sessions", isDirectory: true)
+        try FileManager.default.createDirectory(at: sessionsDirectory, withIntermediateDirectories: true)
+
+        let sessionURL = sessionsDirectory.appendingPathComponent("openclaw-running.jsonl")
+        let trajectoryURL = sessionsDirectory.appendingPathComponent("openclaw-running.trajectory.jsonl")
+        let now = ISO8601DateFormatter().string(from: Date())
+        let nowMilliseconds = Int(Date().timeIntervalSince1970 * 1000)
+
+        let session = """
+        {"type":"session","id":"openclaw-running","timestamp":"\(now)","cwd":"\(temporaryHome.path)/.openclaw"}
+        {"type":"message","timestamp":"\(now)","message":{"role":"user","content":"[Sun 2026-05-31 14:18 GMT+8] 今天天气怎么样","timestamp":\(nowMilliseconds)}}
+        {"type":"message","timestamp":"\(now)","message":{"role":"assistant","content":[{"type":"toolCall","name":"bash"}],"model":"gpt-5.5","usage":{"input":10,"output":2},"stopReason":"toolUse","timestamp":\(nowMilliseconds)}}
+        """
+        try session.write(to: sessionURL, atomically: true, encoding: .utf8)
+
+        let trajectory = """
+        {"type":"session.started","ts":"\(now)","sessionId":"openclaw-running","sessionKey":"agent:main:main","runId":"run-open","workspaceDir":"\(temporaryHome.path)/.openclaw/workspace","provider":"openai-codex","modelId":"gpt-5.5"}
+        """
+        try trajectory.write(to: trajectoryURL, atomically: true, encoding: .utf8)
+
+        let tasks = await OpenClawLocalProvider(homeDirectory: temporaryHome).fetchTasks()
+
+        let task = try XCTUnwrap(tasks.first)
+        XCTAssertEqual(task.id, "openclaw:openclaw-running")
+        XCTAssertEqual(task.title, "今天天气怎么样")
+        XCTAssertEqual(task.providerID, .openClaw)
+        XCTAssertEqual(task.model, "gpt-5.5")
+        XCTAssertEqual(task.tokenUsage, 12)
+        XCTAssertEqual(task.status, .running)
+    }
+
+    func testOpenClawEndedTrajectoryMapsTaskCompleted() async throws {
+        let sessionsDirectory = temporaryHome
+            .appendingPathComponent(".openclaw", isDirectory: true)
+            .appendingPathComponent("agents", isDirectory: true)
+            .appendingPathComponent("main", isDirectory: true)
+            .appendingPathComponent("sessions", isDirectory: true)
+        try FileManager.default.createDirectory(at: sessionsDirectory, withIntermediateDirectories: true)
+
+        let sessionURL = sessionsDirectory.appendingPathComponent("openclaw-completed.jsonl")
+        let trajectoryURL = sessionsDirectory.appendingPathComponent("openclaw-completed.trajectory.jsonl")
+        let now = ISO8601DateFormatter().string(from: Date())
+        let nowMilliseconds = Int(Date().timeIntervalSince1970 * 1000)
+
+        let session = """
+        {"type":"session","id":"openclaw-completed","timestamp":"\(now)","cwd":"\(temporaryHome.path)/.openclaw"}
+        {"type":"message","timestamp":"\(now)","message":{"role":"user","content":"总结天气","timestamp":\(nowMilliseconds)}}
+        {"type":"message","timestamp":"\(now)","message":{"role":"assistant","content":[{"type":"text","text":"今天晴。"}],"model":"gpt-5.5","usage":{"totalTokens":32},"stopReason":"stop","timestamp":\(nowMilliseconds)}}
+        {"type":"message","timestamp":"\(now)","message":{"role":"assistant","content":[{"type":"text","text":"今天晴。"}],"model":"delivery-mirror","usage":{"totalTokens":0},"stopReason":"stop","timestamp":\(nowMilliseconds)}}
+        """
+        try session.write(to: sessionURL, atomically: true, encoding: .utf8)
+
+        let trajectory = """
+        {"type":"session.started","ts":"\(now)","sessionId":"openclaw-completed","sessionKey":"agent:main:main","runId":"run-done","workspaceDir":"\(temporaryHome.path)/.openclaw/workspace","provider":"openai-codex","modelId":"gpt-5.5"}
+        {"type":"session.ended","ts":"\(now)","sessionId":"openclaw-completed","sessionKey":"agent:main:main","runId":"run-done","workspaceDir":"\(temporaryHome.path)/.openclaw/workspace","provider":"openai-codex","modelId":"gpt-5.5","data":{"status":"success"}}
+        """
+        try trajectory.write(to: trajectoryURL, atomically: true, encoding: .utf8)
+
+        let tasks = await OpenClawLocalProvider(homeDirectory: temporaryHome).fetchTasks()
+
+        let task = try XCTUnwrap(tasks.first)
+        XCTAssertEqual(task.id, "openclaw:openclaw-completed")
+        XCTAssertEqual(task.status, .completed)
+        XCTAssertEqual(task.model, "gpt-5.5")
+        XCTAssertEqual(task.tokenUsage, 32)
+    }
+
     private func runSQLite(databaseURL: URL, sql: String) throws {
         let process = Process()
         let stderr = Pipe()

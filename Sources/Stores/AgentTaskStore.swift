@@ -22,6 +22,7 @@ final class AgentTaskStore: ObservableObject {
     private let descriptors: [AgentProviderDescriptor]
     private let providers: [AgentTaskProvider]
     private let runtimeProviders: [AgentRuntimeProvider]
+    private let isChatGPTAccessibilityTrusted: () -> Bool
     private var providerTasks: [AgentTask] = []
     private var localStatusOverrides: [String: AgentTaskStatus] = [:]
     private var localUpdatedAtOverrides: [String: Date] = [:]
@@ -33,7 +34,8 @@ final class AgentTaskStore: ObservableObject {
     init(
         descriptors: [AgentProviderDescriptor]? = nil,
         providers: [AgentTaskProvider]? = nil,
-        runtimeProviders: [AgentRuntimeProvider]? = nil
+        runtimeProviders: [AgentRuntimeProvider]? = nil,
+        isChatGPTAccessibilityTrusted: @escaping () -> Bool = { ChatGPTAccessibilityDetector.isTrusted }
     ) {
         self.descriptors = descriptors ?? AgentProviderDescriptor.defaults()
         self.providers = providers ?? [
@@ -41,12 +43,14 @@ final class AgentTaskStore: ObservableObject {
             ChatGPTLocalProvider(),
             ClaudeLocalProvider(),
             ClaudeDesktopLocalProvider(),
-            HermesLocalProvider()
+            HermesLocalProvider(),
+            OpenClawLocalProvider()
         ]
         self.runtimeProviders = runtimeProviders ?? [
             TerminalAgentRuntimeProvider(),
             DesktopAppRuntimeProvider()
         ]
+        self.isChatGPTAccessibilityTrusted = isChatGPTAccessibilityTrusted
 
         tasks = []
         runtimes = []
@@ -300,6 +304,19 @@ final class AgentTaskStore: ObservableObject {
             let missingRequiredPath = !dataPaths.isEmpty && !foundPath
             let count = (taskCounts[setting.id] ?? 0) + (runtimeCounts[setting.id] ?? 0)
 
+            if setting.id == AgentProviderID.chatGPT.rawValue,
+               isChatGPTDesktopRunning(in: runtimeFetches),
+               !isChatGPTAccessibilityTrusted() {
+                return ProviderDiagnostic(
+                    id: setting.id,
+                    displayName: setting.displayName,
+                    status: .failed,
+                    message: "ChatGPT Desktop is running, but Accessibility is not allowed. Grant mahjong access in System Settings > Privacy & Security > Accessibility so it can detect when ChatGPT is generating. Conversation text is still not read.",
+                    dataPaths: dataPaths,
+                    lastCheckedAt: checkedAt
+                )
+            }
+
             if missingRequiredPath {
                 return ProviderDiagnostic(
                     id: setting.id,
@@ -331,6 +348,14 @@ final class AgentTaskStore: ObservableObject {
                 lastCheckedAt: checkedAt
             )
         }
+    }
+
+    private func isChatGPTDesktopRunning(in runtimeFetches: [ProviderRuntimeFetch]) -> Bool {
+        runtimeFetches
+            .flatMap(\.runtimes)
+            .contains { runtime in
+                runtime.bundleIdentifier == "com.openai.chat" || runtime.id == "desktop:chatgpt"
+            }
     }
 
     private func publishMergedTasks() {

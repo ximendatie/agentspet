@@ -6,6 +6,7 @@ enum AgentProviderID: String, CaseIterable, Codable, Sendable {
     case claudeCLI = "claude-cli"
     case claudeDesktop = "claude-desktop"
     case hermes
+    case openClaw = "openclaw"
     case terminalAgents = "terminal-agents"
     case desktopApps = "desktop-apps"
 }
@@ -68,6 +69,14 @@ struct AgentProviderDescriptor: Identifiable, Equatable, Sendable {
                 dataPaths: ["\(home)/.hermes/state.db"],
                 privacyDescription: "Reads Hermes local session database fields such as title, source, model, timestamps, and token usage.",
                 detail: "Reads Hermes local state database."
+            ),
+            AgentProviderDescriptor(
+                id: .openClaw,
+                displayName: "OpenClaw",
+                defaultEnabled: true,
+                dataPaths: ["\(home)/.openclaw/agents"],
+                privacyDescription: "Reads OpenClaw local session metadata, trajectory events, model, timestamps, and token usage.",
+                detail: "Reads OpenClaw local session and trajectory files."
             ),
             AgentProviderDescriptor(
                 id: .terminalAgents,

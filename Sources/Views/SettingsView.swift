@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct SettingsView: View {
@@ -246,6 +247,16 @@ struct DiagnosticRow: View {
                     }
                 }
             }
+
+            if isChatGPTAccessibilityIssue {
+                Button {
+                    openAccessibilitySettings()
+                } label: {
+                    Label("打开辅助功能设置", systemImage: "arrow.up.right.square")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
         }
         .padding(12)
         .background(
@@ -290,5 +301,16 @@ struct DiagnosticRow: View {
             return "not checked"
         }
         return Formatters.relative(lastCheckedAt)
+    }
+
+    private var isChatGPTAccessibilityIssue: Bool {
+        diagnostic.id == AgentProviderID.chatGPT.rawValue && diagnostic.status == .failed
+    }
+
+    private func openAccessibilitySettings() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") else {
+            return
+        }
+        NSWorkspace.shared.open(url)
     }
 }

@@ -188,6 +188,40 @@ final class AgentTaskStoreTests: XCTestCase {
         XCTAssertTrue(store.tasks.isEmpty)
     }
 
+    func testChatGPTRunningWithoutAccessibilityReportsActionableDiagnostic() async throws {
+        let store = AgentTaskStore(
+            providers: [],
+            runtimeProviders: [
+                MockRuntimeProvider(
+                    providerID: .desktopApps,
+                    providerName: "Desktop Apps",
+                    runtimes: [
+                        AgentRuntime(
+                            id: "desktop:chatgpt",
+                            name: "ChatGPT Desktop",
+                            provider: "OpenAI",
+                            providerID: .desktopApps,
+                            kind: .desktopApp,
+                            summary: "running",
+                            bundleIdentifier: "com.openai.chat"
+                        )
+                    ]
+                )
+            ],
+            isChatGPTAccessibilityTrusted: { false }
+        )
+
+        store.refreshNow()
+        try await waitUntil {
+            store.diagnostics.first { $0.id == AgentProviderID.chatGPT.rawValue }?.status == .failed
+        }
+
+        let diagnostic = try XCTUnwrap(store.diagnostics.first { $0.id == AgentProviderID.chatGPT.rawValue })
+        XCTAssertTrue(diagnostic.message.contains("Accessibility"))
+        XCTAssertTrue(diagnostic.message.contains("System Settings"))
+        XCTAssertTrue(diagnostic.message.contains("Conversation text is still not read"))
+    }
+
     func testFutureTasksAreSimpleLocalItems() {
         let store = AgentTaskStore(providers: [], runtimeProviders: [])
 
@@ -248,8 +282,8 @@ private struct MockTaskProvider: AgentTaskProvider {
 }
 
 private struct MockRuntimeProvider: AgentRuntimeProvider {
-    let providerID = AgentProviderID.terminalAgents
-    let providerName = "Terminal Agents"
+    var providerID = AgentProviderID.terminalAgents
+    var providerName = "Terminal Agents"
     let runtimes: [AgentRuntime]
 
     func fetchRuntimes() async -> [AgentRuntime] {
