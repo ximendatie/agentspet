@@ -4,10 +4,13 @@
 
 ![mahjong visual showcase](docs/assets/showcase.png)
 
-[Open the visual showcase](docs/showcase.html)
+[Open the visual showcase](docs/showcase.html) ·
+[Download a release](https://github.com/ximendatie/mahjong/releases) ·
+[Launch playbook](docs/launch.md)
 
-mahjong is a tiny macOS desktop companion for watching local AI agent work
-across desktop apps and terminal sessions.
+mahjong is a local-first macOS desktop companion for watching Codex, Claude,
+ChatGPT, Hermes, and other AI agents work across desktop apps and terminal
+sessions.
 
 It is intentionally local-first and read-only: the app helps you see what your
 agents are doing without sending data anywhere, mutating provider config, or
@@ -17,6 +20,14 @@ The name comes from the app's interaction model: when multiple agent sessions
 are running, the floating companion switches between Mahjong tile icons so the
 current workload is visible at a glance.
 
+## Why People Try It
+
+- See which local agents are running without digging through windows, tabs, and
+  terminal sessions.
+- Keep agent status visible in a small floating desktop companion.
+- Inspect local task metadata while preserving a clear privacy boundary.
+- Add new providers through small, reviewable parser and runtime integrations.
+
 ## What It Does
 
 - Shows a floating Mahjong-tile desktop companion that reacts when local agents
@@ -25,6 +36,12 @@ current workload is visible at a glance.
 - Detects supported desktop apps and terminal agent processes.
 - Reads local session metadata for supported providers.
 - Lets you draft future plans locally so you can capture work for later.
+
+## Status
+
+mahjong is early and usable for local testing. The current priority is a
+trustworthy first-run experience: clear provider controls, diagnostics, privacy
+defaults, and downloadable release builds.
 
 ## Run
 
@@ -81,19 +98,20 @@ mahjong uses read-only local observation by default:
 
 ## Current Providers
 
-| Provider | Current behavior |
-| --- | --- |
-| Codex Desktop / Codex local sessions | Reads `~/.codex/session_index.jsonl` and `~/.codex/sessions/**/*.jsonl`. |
-| Claude local sessions | Reads `~/.claude/projects/**/*.jsonl`. |
-| Claude Desktop local sessions | Reads metadata from `~/Library/Application Support/Claude-3p/local-agent-mode-sessions/**/local_*.json` and `~/Library/Application Support/Claude-3p/claude-code-sessions/**/local_*.json`, then correlates active sessions with local Claude Desktop `--resume` processes. |
-| Hermes local sessions | Reads `~/.hermes/state.db` session/message metadata and detects Hermes Agent desktop app presence through `NSWorkspace` plus Hermes CLI/gateway process presence from `ps`. |
-| Terminal agents | Reads local process metadata from `ps` and records matching Codex, Claude, Hermes, and OpenClaw processes. |
-| OpenClaw | Detects OpenClaw Desktop and OpenClaw gateway/CLI process presence only. |
-| ChatGPT Desktop | Detects app presence through `NSWorkspace`, checks Accessibility button labels for generation state, and uses local conversation cache modification times as recent-activity fallback. Conversation text is not parsed. |
+| Provider | Task metadata | Runtime detection | Permission notes |
+| --- | --- | --- | --- |
+| Codex Desktop / Codex local sessions | Reads `~/.codex/session_index.jsonl` and `~/.codex/sessions/**/*.jsonl`. | Terminal process matching. | Local files only. |
+| Claude local sessions | Reads `~/.claude/projects/**/*.jsonl`. | Terminal process matching. | Local files only. |
+| Claude Desktop local sessions | Reads metadata from `~/Library/Application Support/Claude-3p/local-agent-mode-sessions/**/local_*.json` and `~/Library/Application Support/Claude-3p/claude-code-sessions/**/local_*.json`. | Correlates active sessions with local Claude Desktop `--resume` processes. | Local files only. |
+| Hermes local sessions | Reads `~/.hermes/state.db` session/message metadata. | Detects Hermes Agent through `NSWorkspace` and Hermes CLI/gateway processes from `ps`. | Requires local SQLite metadata to exist. |
+| Terminal agents | No conversation parsing. | Reads process metadata from `ps` for Codex, Claude, Hermes, and OpenClaw. | Process list only. |
+| OpenClaw | Not parsed yet. | Detects OpenClaw Desktop and OpenClaw gateway/CLI process presence. | Presence detection only. |
+| ChatGPT Desktop | Does not parse conversation text. Uses local conversation cache modification times as a recent-activity fallback. | Detects app presence through `NSWorkspace` and checks Accessibility button labels for generation state. | Accessibility is optional and only used for generation-state labels. |
 
 ## Documentation
 
 - [Visual showcase](docs/showcase.html)
+- [Launch playbook](docs/launch.md)
 - [Privacy and security notes](docs/privacy.md)
 - [Architecture overview](docs/architecture.md)
 - [Roadmap](docs/roadmap.md)
@@ -115,6 +133,18 @@ Good contribution areas:
 - More UI polish and accessibility improvements.
 - Localized UI strings.
 - Broader test coverage for provider parsers.
+
+## Help It Reach More Users
+
+- Star or share the repository with people who run multiple local agents.
+- Try the release build and report first-run friction.
+- Open an issue for a provider you want to see supported.
+- Pick a small task from [Contributor Task Board](docs/contributor-tasks.md).
+
+Suggested GitHub topics:
+
+`macos`, `swift`, `ai-agents`, `codex`, `claude`, `chatgpt`, `local-first`,
+`agent-monitoring`, `desktop-companion`
 
 ## Contributing
 
