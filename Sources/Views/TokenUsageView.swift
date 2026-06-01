@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct TokenUsageView: View {
     @ObservedObject var taskStore: AgentTaskStore
@@ -264,6 +265,7 @@ private struct SessionTokenTreemapView: View {
     let tasks: [AgentTask]
     let totalTokens: Int
     @State private var hoveredEntryID: String?
+    @State private var detailEntryID: String?
 
     private var entries: [SessionTokenTreemapEntry] {
         let threshold = max(1, Int((Double(totalTokens) * 0.01).rounded(.up)))
@@ -331,6 +333,7 @@ private struct SessionTokenTreemapView: View {
                 ZStack(alignment: .topLeading) {
                     ForEach(nodes(in: proxy.size)) { node in
                         let isHovered = hoveredEntryID == node.entry.id
+                        let isDetailVisible = detailEntryID == node.entry.id
                         SessionTokenTreemapTile(
                             rank: node.rank,
                             entry: node.entry,
@@ -338,18 +341,26 @@ private struct SessionTokenTreemapView: View {
                             color: tokenUsageColor(node.colorIndex),
                             size: node.rect.size,
                             isHovered: isHovered,
+                            isDetailVisible: isDetailVisible,
                             onHoverChanged: { hovering in
                                 if hovering {
                                     hoveredEntryID = node.entry.id
                                 } else if hoveredEntryID == node.entry.id {
                                     hoveredEntryID = nil
                                 }
+                            },
+                            onRightClick: {
+                                detailEntryID = isDetailVisible ? nil : node.entry.id
                             }
                         )
                         .frame(width: node.rect.width, height: node.rect.height)
                         .position(x: node.rect.midX, y: node.rect.midY)
-                        .zIndex(isHovered ? 1 : 0)
+                        .zIndex((isHovered || isDetailVisible) ? 1 : 0)
                     }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    detailEntryID = nil
                 }
             }
             .frame(minHeight: 420)
@@ -437,7 +448,9 @@ private struct SessionTokenTreemapTile: View {
     let color: Color
     let size: CGSize
     let isHovered: Bool
+    let isDetailVisible: Bool
     let onHoverChanged: (Bool) -> Void
+    let onRightClick: () -> Void
 
     private var isLarge: Bool {
         size.width >= 240 && size.height >= 145
@@ -463,8 +476,8 @@ private struct SessionTokenTreemapTile: View {
                 compactContent
             }
 
-            if isHovered {
-                immediateHoverDetail
+            if isDetailVisible {
+                immediateDetail
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
         }
@@ -473,8 +486,10 @@ private struct SessionTokenTreemapTile: View {
         .onHover { hovering in
             onHoverChanged(hovering)
         }
+        .overlay(RightClickDetector(onRightClick: onRightClick))
         .scaleEffect(isHovered ? 1.006 : 1)
         .animation(.easeOut(duration: 0.12), value: isHovered)
+        .animation(.easeOut(duration: 0.12), value: isDetailVisible)
     }
 
     private var tileBackground: some View {
@@ -587,7 +602,7 @@ private struct SessionTokenTreemapTile: View {
         .background(Color.primary.opacity(0.04))
     }
 
-    private var immediateHoverDetail: some View {
+    private var immediateDetail: some View {
         VStack(alignment: .leading, spacing: 7) {
             Text(entry.title)
                 .font(.caption.weight(.semibold))
@@ -653,6 +668,57 @@ private struct SessionTokenTreemapNode: Identifiable {
     let colorIndex: Int
     let entry: SessionTokenTreemapEntry
     let rect: CGRect
+}
+
+private struct RightClickDetector: NSViewRepresentable {
+    let onRightClick: () -> Void
+
+    func makeNSView(context: Context) -> LocalRightClickView {
+        let view = LocalRightClickView()
+        view.onRightClick = onRightClick
+        return view
+    }
+
+    func updateNSView(_ nsView: LocalRightClickView, context: Context) {
+        nsView.onRightClick = onRightClick
+    }
+}
+
+private final class LocalRightClickView: NSView {
+    var onRightClick: (() -> Void)?
+    private var monitor: Any?
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+
+        if window == nil {
+            removeMonitor()
+        } else if monitor == nil {
+            monitor = NSEvent.addLocalMonitorForEvents(matching: .rightMouseDown) { [weak self] event in
+                guard let self, let window = self.window, event.window === window else {
+                    return event
+                }
+
+                let point = self.convert(event.locationInWindow, from: nil)
+                if self.bounds.contains(point) {
+                    self.onRightClick?()
+                }
+
+                return event
+            }
+        }
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+
+    private func removeMonitor() {
+        if let monitor {
+            NSEvent.removeMonitor(monitor)
+            self.monitor = nil
+        }
+    }
 }
 
 private func tokenUsageColor(_ index: Int) -> Color {
