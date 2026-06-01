@@ -9,45 +9,86 @@ struct SettingsView: View {
         ScrollView {
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .top, spacing: 20) {
-                    settingsSection
-                        .frame(minWidth: 420, maxWidth: 620, alignment: .topLeading)
+                    controlsColumn
+                        .frame(minWidth: 360, maxWidth: 460, alignment: .topLeading)
                     diagnosticsSection
-                        .frame(minWidth: 360, maxWidth: .infinity, alignment: .topLeading)
+                        .frame(minWidth: 420, maxWidth: .infinity, alignment: .topLeading)
                 }
 
-                VStack(alignment: .leading, spacing: 22) {
-                    settingsSection
+                VStack(alignment: .leading, spacing: 18) {
+                    controlsColumn
                     diagnosticsSection
                 }
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 22)
+            .padding(22)
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    private var settingsSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            sectionHeader(
-                title: "隐私与 Provider",
-                subtitle: "控制 mahjong 可以读取哪些本地来源，以及共享屏幕时显示多少信息。"
-            )
+    private var controlsColumn: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            generalSection
+            versionSection
+            providersSection
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
 
-            PrivacyToggleRow(isEnabled: taskStore.isPrivacyModeEnabled) { isEnabled in
-                taskStore.setPrivacyModeEnabled(isEnabled)
+    private var generalSection: some View {
+        SettingsGroupBox(
+            title: "通用",
+            subtitle: "控制 mahjong 的显示方式和共享屏幕时暴露的信息。"
+        ) {
+            VStack(spacing: 0) {
+                SettingsToggleRow(
+                    title: "隐私模式",
+                    subtitle: "隐藏任务标题、摘要、模型和 token 数。",
+                    systemImage: "eye.slash",
+                    isEnabled: taskStore.isPrivacyModeEnabled
+                ) { isEnabled in
+                    taskStore.setPrivacyModeEnabled(isEnabled)
+                }
+
+                SettingsDivider()
+
+                SettingsToggleRow(
+                    title: "菜单栏模式",
+                    subtitle: "在菜单栏显示运行数量，并提供打开 Board、刷新和退出入口。",
+                    systemImage: "menubar.rectangle",
+                    isEnabled: taskStore.isMenuBarEnabled
+                ) { isEnabled in
+                    taskStore.setMenuBarEnabled(isEnabled)
+                }
+
+                SettingsDivider()
+
+                SettingsToggleRow(
+                    title: "Dock 图标",
+                    subtitle: "显示 Dock 入口；关闭后保留菜单栏和桌宠入口。",
+                    systemImage: "dock.rectangle",
+                    isEnabled: taskStore.isDockIconEnabled
+                ) { isEnabled in
+                    taskStore.setDockIconEnabled(isEnabled)
+                }
             }
+        }
+    }
 
-            MenuBarToggleRow(isEnabled: taskStore.isMenuBarEnabled) { isEnabled in
-                taskStore.setMenuBarEnabled(isEnabled)
-            }
-
-            DockIconToggleRow(isEnabled: taskStore.isDockIconEnabled) { isEnabled in
-                taskStore.setDockIconEnabled(isEnabled)
-            }
-
+    private var versionSection: some View {
+        SettingsGroupBox(
+            title: "版本",
+            subtitle: "手动检查 GitHub Release 上的新版本。"
+        ) {
             VersionUpdateRow(versionChecker: versionChecker)
+        }
+    }
 
+    private var providersSection: some View {
+        SettingsGroupBox(
+            title: "Provider",
+            subtitle: "选择 mahjong 可以读取哪些本地来源。"
+        ) {
             LazyVGrid(columns: providerColumns, alignment: .leading, spacing: 10) {
                 ForEach(taskStore.providerSettings) { setting in
                     ProviderToggleRow(setting: setting) { isEnabled in
@@ -56,28 +97,28 @@ struct SettingsView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     private var diagnosticsSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .center, spacing: 12) {
-                sectionHeader(
-                    title: "Provider Diagnostics",
-                    subtitle: "刷新后显示本地路径、运行态和最近读取结果。"
-                )
-                Spacer()
-                Button {
-                    taskStore.refreshNow()
-                } label: {
-                    Label("刷新诊断", systemImage: "arrow.clockwise")
+        SettingsGroupBox(
+            title: "Provider Diagnostics",
+            subtitle: "刷新后显示本地路径、运行态和最近读取结果。"
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Spacer()
+                    Button {
+                        taskStore.refreshNow()
+                    } label: {
+                        Label("刷新诊断", systemImage: "arrow.clockwise")
+                    }
+                    .buttonStyle(.bordered)
                 }
-                .buttonStyle(.bordered)
-            }
 
-            LazyVStack(spacing: 8) {
-                ForEach(taskStore.diagnostics) { diagnostic in
-                    DiagnosticRow(diagnostic: diagnostic, isPrivacyModeEnabled: taskStore.isPrivacyModeEnabled)
+                LazyVStack(spacing: 8) {
+                    ForEach(taskStore.diagnostics) { diagnostic in
+                        DiagnosticRow(diagnostic: diagnostic, isPrivacyModeEnabled: taskStore.isPrivacyModeEnabled)
+                    }
                 }
             }
         }
@@ -86,19 +127,31 @@ struct SettingsView: View {
 
     private var providerColumns: [GridItem] {
         [
-            GridItem(.adaptive(minimum: 260, maximum: 320), spacing: 10, alignment: .topLeading)
+            GridItem(.adaptive(minimum: 210, maximum: 320), spacing: 10, alignment: .topLeading)
         ]
     }
+}
 
-    private func sectionHeader(title: String, subtitle: String) -> some View {
+struct SettingsGroupBox<Content: View>: View {
+    let title: String
+    let subtitle: String
+    @ViewBuilder let content: Content
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title)
-                .font(.headline)
+                .font(.system(size: 15, weight: .semibold))
             Text(subtitle)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+
+            content
+                .padding(.top, 9)
         }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background(settingsCardBackground)
     }
 }
 
@@ -106,59 +159,55 @@ struct VersionUpdateRow: View {
     @ObservedObject var versionChecker: AppVersionChecker
 
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 8) {
-                    Text("版本更新")
-                        .font(.system(size: 14, weight: .semibold))
-                    Text("v\(versionChecker.currentVersion)")
-                        .font(.caption2.monospacedDigit().weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(Capsule().fill(Color.primary.opacity(0.07)))
-                }
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Image(systemName: "arrow.down.circle")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20)
+                Text("当前版本")
+                    .font(.system(size: 13, weight: .semibold))
+                Text("v\(versionChecker.currentVersion)")
+                    .font(.caption2.monospacedDigit().weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(Color.primary.opacity(0.07)))
+                Spacer(minLength: 0)
+            }
 
+            VStack(alignment: .leading, spacing: 5) {
                 Text(statusText)
                     .font(.caption)
                     .foregroundStyle(statusColor)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Spacer(minLength: 16)
+            HStack(spacing: 10) {
+                if case let .updateAvailable(_, _, releaseURL) = versionChecker.status {
+                    Button {
+                        NSWorkspace.shared.open(releaseURL)
+                    } label: {
+                        Label("下载更新", systemImage: "arrow.down.circle")
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
 
-            if case let .updateAvailable(_, _, releaseURL) = versionChecker.status {
                 Button {
-                    NSWorkspace.shared.open(releaseURL)
+                    versionChecker.checkForUpdates()
                 } label: {
-                    Label("下载更新", systemImage: "arrow.down.circle")
+                    if versionChecker.status == .checking {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Label("检查更新", systemImage: "arrow.clockwise")
+                    }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.bordered)
+                .disabled(versionChecker.status == .checking)
             }
-
-            Button {
-                versionChecker.checkForUpdates()
-            } label: {
-                if versionChecker.status == .checking {
-                    ProgressView()
-                        .controlSize(.small)
-                } else {
-                    Label("检查更新", systemImage: "arrow.clockwise")
-                }
-            }
-            .buttonStyle(.bordered)
-            .disabled(versionChecker.status == .checking)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 82, alignment: .center)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.9))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-        )
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var statusText: String {
@@ -188,16 +237,24 @@ struct VersionUpdateRow: View {
     }
 }
 
-struct DockIconToggleRow: View {
+struct SettingsToggleRow: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
     let isEnabled: Bool
     let onChange: (Bool) -> Void
 
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 20)
+
             VStack(alignment: .leading, spacing: 4) {
-                Text("Dock 图标")
-                    .font(.system(size: 14, weight: .semibold))
-                Text("显示 Dock 入口；关闭后保留右上角菜单栏和桌宠入口。")
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+                Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -212,92 +269,15 @@ struct DockIconToggleRow: View {
             .labelsHidden()
             .toggleStyle(.switch)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 74, alignment: .center)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.9))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-        )
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, minHeight: 56, alignment: .center)
     }
 }
 
-struct MenuBarToggleRow: View {
-    let isEnabled: Bool
-    let onChange: (Bool) -> Void
-
+struct SettingsDivider: View {
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("菜单栏模式")
-                    .font(.system(size: 14, weight: .semibold))
-                Text("在菜单栏显示运行数量，并提供打开 Board、刷新和退出入口。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 16)
-
-            Toggle("", isOn: Binding(
-                get: { isEnabled },
-                set: { onChange($0) }
-            ))
-            .labelsHidden()
-            .toggleStyle(.switch)
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 74, alignment: .center)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.9))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-        )
-    }
-}
-
-struct PrivacyToggleRow: View {
-    let isEnabled: Bool
-    let onChange: (Bool) -> Void
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("隐私模式")
-                    .font(.system(size: 14, weight: .semibold))
-                Text("隐藏任务标题、摘要、模型和 token 数。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 16)
-
-            Toggle("", isOn: Binding(
-                get: { isEnabled },
-                set: { onChange($0) }
-            ))
-            .labelsHidden()
-            .toggleStyle(.switch)
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 74, alignment: .center)
-        .background(settingsRowBackground)
-    }
-
-    private var settingsRowBackground: some View {
-        RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(Color(nsColor: .controlBackgroundColor).opacity(0.9))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-            )
+        Divider()
+            .padding(.leading, 32)
     }
 }
 
@@ -309,7 +289,7 @@ struct ProviderToggleRow: View {
         HStack(alignment: .center, spacing: 14) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(setting.displayName)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 13, weight: .semibold))
                     .lineLimit(1)
                 Text(setting.detail)
                     .font(.caption)
@@ -327,11 +307,11 @@ struct ProviderToggleRow: View {
             .labelsHidden()
             .toggleStyle(.switch)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 86, alignment: .center)
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 78, alignment: .center)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.9))
+                .fill(Color.primary.opacity(0.035))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -389,14 +369,7 @@ struct DiagnosticRow: View {
             }
         }
         .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.9))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-        )
+        .background(settingsCardBackground)
     }
 
     private var statusDot: some View {
@@ -443,4 +416,13 @@ struct DiagnosticRow: View {
         }
         NSWorkspace.shared.open(url)
     }
+}
+
+private var settingsCardBackground: some View {
+    RoundedRectangle(cornerRadius: 8, style: .continuous)
+        .fill(Color(nsColor: .controlBackgroundColor).opacity(0.82))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+        )
 }

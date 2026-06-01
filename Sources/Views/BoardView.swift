@@ -35,8 +35,6 @@ struct BoardView: View {
 
             Spacer()
 
-            runningBadge
-            runtimeBadge
             privacyBadge
 
             Button {
@@ -89,34 +87,6 @@ struct BoardView: View {
         .padding(.horizontal, 18)
         .padding(.top, 18)
         .padding(.bottom, 14)
-    }
-
-    private var runningBadge: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(taskStore.isWorking ? Color.cyan : Color.secondary.opacity(0.45))
-                .frame(width: 8, height: 8)
-            Text("\(taskStore.runningCount) running")
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(Capsule().fill(Color.primary.opacity(0.07)))
-    }
-
-    private var runtimeBadge: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "cpu")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text("\(taskStore.runningAgentCount) agents")
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(Capsule().fill(Color.primary.opacity(0.07)))
     }
 
     @ViewBuilder
