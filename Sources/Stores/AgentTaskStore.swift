@@ -197,6 +197,24 @@ final class AgentTaskStore: ObservableObject {
         persistFutureTasks()
     }
 
+    func updateFutureTask(
+        id: FutureTaskItem.ID,
+        title: String,
+        note: String
+    ) {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedTitle.isEmpty || !trimmedNote.isEmpty,
+              let index = futureTasks.firstIndex(where: { $0.id == id }) else {
+            return
+        }
+
+        futureTasks[index].title = trimmedTitle.isEmpty ? trimmedNote.firstLineTitle : trimmedTitle
+        futureTasks[index].note = trimmedNote
+        futureTasks[index].updatedAt = Date()
+        persistFutureTasks()
+    }
+
     func setFutureTaskCompleted(id: FutureTaskItem.ID, isCompleted: Bool) {
         guard let index = futureTasks.firstIndex(where: { $0.id == id }) else {
             return

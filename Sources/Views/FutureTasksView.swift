@@ -6,6 +6,7 @@ struct FutureTasksView: View {
     @Binding var showsArchivedPlans: Bool
     @State private var title = ""
     @State private var note = ""
+    @State private var editingTaskID: FutureTaskItem.ID?
 
     var body: some View {
         HStack(spacing: 0) {
@@ -20,9 +21,9 @@ struct FutureTasksView: View {
     private var quickCapture: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 3) {
-                Text("快速记录")
+                Text(editingTaskID == nil ? "快速记录" : "编辑计划")
                     .font(.headline)
-                Text("保存未来打算做的计划，不绑定 Agent 或模型。")
+                Text(editingTaskID == nil ? "保存未来打算做的计划，不绑定 Agent 或模型。" : "修改已记录的计划内容。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -34,7 +35,7 @@ struct FutureTasksView: View {
                     .foregroundStyle(.secondary)
                 TextField("例如：整理第三阶段菜单栏方案", text: $title)
                     .textFieldStyle(.roundedBorder)
-                    .onSubmit(createTask)
+                    .onSubmit(saveTask)
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -56,12 +57,23 @@ struct FutureTasksView: View {
                     )
             }
 
-            Button(action: createTask) {
-                Label("记录计划", systemImage: "plus")
-                    .frame(maxWidth: .infinity)
+            HStack(spacing: 10) {
+                if editingTaskID != nil {
+                    Button(action: cancelEditing) {
+                        Image(systemName: "xmark")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .help("取消编辑")
+                }
+
+                Button(action: saveTask) {
+                    Label(editingTaskID == nil ? "记录计划" : "保存修改", systemImage: editingTaskID == nil ? "plus" : "checkmark")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!canSaveTask)
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(!canCreateTask)
 
             Spacer()
         }
@@ -124,8 +136,14 @@ struct FutureTasksView: View {
                         onCopy: {
                             copyTask(task)
                         },
+                        onEdit: {
+                            editTask(task)
+                        },
                         onDelete: {
                             taskStore.deleteFutureTask(id: task.id)
+                            if editingTaskID == task.id {
+                                cancelEditing()
+                            }
                         }
                     )
                 }
@@ -140,17 +158,36 @@ struct FutureTasksView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    private var canCreateTask: Bool {
+    private var canSaveTask: Bool {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             || !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    private func createTask() {
-        guard canCreateTask else {
+    private func saveTask() {
+        guard canSaveTask else {
             return
         }
 
-        taskStore.createFutureTask(title: title, note: note)
+        if let editingTaskID {
+            taskStore.updateFutureTask(id: editingTaskID, title: title, note: note)
+        } else {
+            taskStore.createFutureTask(title: title, note: note)
+        }
+        clearEditor()
+    }
+
+    private func editTask(_ task: FutureTaskItem) {
+        editingTaskID = task.id
+        title = task.title
+        note = task.note
+    }
+
+    private func cancelEditing() {
+        clearEditor()
+    }
+
+    private func clearEditor() {
+        editingTaskID = nil
         title = ""
         note = ""
     }
@@ -168,6 +205,7 @@ struct FutureTaskCardView: View {
     let isPrivacyModeEnabled: Bool
     let onToggle: () -> Void
     let onCopy: () -> Void
+    let onEdit: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
@@ -194,6 +232,12 @@ struct FutureTaskCardView: View {
                     }
                     .buttonStyle(.borderless)
                     .help("复制计划")
+
+                    Button(action: onEdit) {
+                        Image(systemName: "pencil")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("编辑计划")
 
                     Button(role: .destructive, action: onDelete) {
                         Image(systemName: "trash")

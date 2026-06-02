@@ -246,6 +246,32 @@ final class AgentTaskStoreTests: XCTestCase {
         XCTAssertEqual(store.futureTasks.first?.title, "记录一个未来想法")
     }
 
+    func testFutureTaskCanBeEdited() {
+        let store = AgentTaskStore(providers: [], runtimeProviders: [])
+
+        store.createFutureTask(title: "旧计划", note: "旧备注")
+        let task = store.futureTasks[0]
+
+        store.updateFutureTask(id: task.id, title: "新计划", note: "新备注")
+
+        XCTAssertEqual(store.futureTasks[0].id, task.id)
+        XCTAssertEqual(store.futureTasks[0].title, "新计划")
+        XCTAssertEqual(store.futureTasks[0].note, "新备注")
+        XCTAssertGreaterThanOrEqual(store.futureTasks[0].updatedAt, task.updatedAt)
+    }
+
+    func testEditedFutureTaskTitleFallsBackToFirstNoteLine() {
+        let store = AgentTaskStore(providers: [], runtimeProviders: [])
+
+        store.createFutureTask(title: "旧计划", note: "旧备注")
+        let task = store.futureTasks[0]
+
+        store.updateFutureTask(id: task.id, title: "", note: "新的第一行\n更多细节")
+
+        XCTAssertEqual(store.futureTasks[0].title, "新的第一行")
+        XCTAssertEqual(store.futureTasks[0].note, "新的第一行\n更多细节")
+    }
+
     func testMenuBarModeDefaultsOnAndPersists() {
         let store = AgentTaskStore(providers: [], runtimeProviders: [])
 
